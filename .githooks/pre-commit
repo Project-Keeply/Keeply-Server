@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+set -e
+
+# Format Java sources before commit.
+./gradlew spotlessApply
+
+# Re-stage files that may have been reformatted.
+git add -A
