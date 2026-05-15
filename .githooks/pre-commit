@@ -5,4 +5,4 @@ set -e
 ./gradlew spotlessApply
 
 # Re-stage files that may have been reformatted.
-git add -A
+git add -u
