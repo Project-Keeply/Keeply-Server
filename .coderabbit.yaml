@@ -1,0 +1,82 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "ko-KR"
+tone_instructions: "시니어 백엔드 개발자처럼 리뷰하되 원인과 개선 방향을 중심으로 설명하세요. Spring Boot, Java, JPA, 레이어 책임 분리, 트랜잭션 경계, 보안, 성능, 회귀 위험을 우선 보고 한국어로 간결하게 작성하세요."
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  changed_files_summary: true
+  review_status: true
+  assess_linked_issues: false
+  related_prs: false
+  suggested_labels: true
+  suggested_reviewers: false
+  auto_assign_reviewers: false
+  sequence_diagrams: false
+  poem: false
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    ignore_title_keywords:
+      - "[Docs]"
+    base_branches:
+      - "develop"
+      - "main"
+
+  path_filters:
+    - "!build/**"
+    - "!.gradle/**"
+    - "!gradlew.bat"
+    - "!gradle/wrapper/**"
+
+  path_instructions:
+    - path: "src/main/java/**/controller/**"
+      instructions: |
+        Controller는 요청/응답 매핑과 유효성 검사 위임만 담당해야 합니다.
+        비즈니스 로직이 Controller에 직접 구현되어 있지 않은지 확인해주세요.
+        응답 형식이 공통 ApiResponse 포맷을 따르는지, HTTP 상태코드가 적절한지 검토해주세요.
+
+    - path: "src/main/java/**/service/**"
+      instructions: |
+        Service는 비즈니스 로직의 핵심 계층입니다.
+        트랜잭션 경계(@Transactional)가 적절히 설정되어 있는지 확인해주세요.
+        Entity를 직접 반환하지 않고 DTO로 변환하여 반환하는지 검토해주세요.
+        여러 도메인에 걸친 로직이 있을 경우 책임 분리가 적절한지 확인해주세요.
+
+    - path: "src/main/java/**/repository/**"
+      instructions: |
+        Repository는 데이터 접근 계층입니다.
+        불필요한 쿼리가 발생하지 않는지, N+1 문제 가능성이 없는지 검토해주세요.
+        복잡한 쿼리는 JPQL 또는 QueryDSL로 명시적으로 작성되었는지 확인해주세요.
+
+    - path: "src/main/java/**/dto/**"
+      instructions: |
+        DTO는 계층 간 데이터 전달 역할만 해야 합니다.
+        Entity 필드가 그대로 노출되지 않는지, 민감한 정보(비밀번호 등)가 포함되지 않는지 확인해주세요.
+        Request DTO에 유효성 검사 어노테이션(@NotNull, @Size 등)이 적절히 적용되어 있는지 검토해주세요.
+
+    - path: "src/main/java/**/global/exception/**"
+      instructions: |
+        전역 예외 처리가 일관되게 적용되어 있는지 확인해주세요.
+        커스텀 예외가 적절한 ErrorCode와 매핑되어 있는지, 클라이언트에 불필요한 내부 정보가 노출되지 않는지 검토해주세요.
+
+    - path: "src/main/java/**/global/security/**"
+      instructions: |
+        Security 설정에서 인증/인가 경계가 명확한지 확인해주세요.
+        JWT 검증 로직, Kakao OAuth2 연동 흐름, 토큰 만료 처리가 올바른지 검토해주세요.
+        공개 엔드포인트와 인증 필요 엔드포인트가 명확히 분리되어 있는지 확인해주세요.
+
+    - path: "src/main/resources/**"
+      instructions: |
+        민감한 정보(DB 비밀번호, Secret Key 등)가 하드코딩되어 있지 않은지 확인해주세요.
+        dev/prod 프로파일 설정이 적절히 분리되어 있는지, 운영 환경에서 불필요한 설정이 노출되지 않는지 검토해주세요.
+
+    - path: ".github/**"
+      instructions: |
+        GitHub Actions, PR 템플릿, 이슈 템플릿, 라벨 자동화 설정은 워크플로 회귀와 브랜치 보호 규칙 충돌 가능성을 우선 검토해주세요.
+        base branch 와 working branch 차이로 발생할 수 있는 설정 누락이나 실행 컨텍스트 문제도 함께 확인해주세요.
+
+chat:
+  auto_reply: false
