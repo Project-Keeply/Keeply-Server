@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 set -e
 
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+
 # Format Java sources before commit.
 ./gradlew spotlessApply
 
