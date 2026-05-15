@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(brew *)"
+      "Bash(brew *)",
+      "Bash(gh pr *)",
+      "Bash(git *)",
+      "Bash(./gradlew spotlessApply --info)",
+      "Bash(./gradlew spotlessApply --stacktrace)"
     ]
   }
 }
