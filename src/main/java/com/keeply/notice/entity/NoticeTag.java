@@ -1,4 +1,4 @@
-package com.keeply.common.entity;
+package com.keeply.notice.entity;
 
 public enum NoticeTag {
   DAILY,
