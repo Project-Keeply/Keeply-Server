@@ -13,6 +13,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -43,9 +45,11 @@ public class ExpiryItem extends BaseTimeEntity {
   private Group group;
 
   @Column(name = "product_name", nullable = false)
+  @NotBlank
   private String productName;
 
   @Column(name = "expire_date", nullable = false)
+  @NotNull
   private LocalDate expireDate;
 
   @Column(name = "image_url", nullable = false)
