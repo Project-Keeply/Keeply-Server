@@ -2,11 +2,13 @@ package com.keeply.common.exception;
 
 import com.keeply.common.response.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -29,12 +31,6 @@ public class GlobalExceptionHandler {
         .body(ApiResponse.failure(message));
   }
 
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception e) {
-    return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
-        .body(ApiResponse.failure(ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
-  }
-
   @ExceptionHandler(ConstraintViolationException.class)
   public ResponseEntity<ApiResponse<Void>> handleConstraintViolationException(
       ConstraintViolationException e) {
@@ -45,5 +41,12 @@ public class GlobalExceptionHandler {
             .orElse(ErrorCode.INVALID_INPUT.getMessage());
     return ResponseEntity.status(ErrorCode.INVALID_INPUT.getHttpStatus())
         .body(ApiResponse.failure(message));
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception e) {
+    log.error("Unexpected error", e);
+    return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
+        .body(ApiResponse.failure(ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
   }
 }
