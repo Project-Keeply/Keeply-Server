@@ -44,13 +44,14 @@ public class Notice extends BaseTimeEntity {
   @JoinColumn(name = "group_id", insertable = false, updatable = false)
   private Group group;
 
-  @Column private String title;
+  @Column(nullable = false)
+  private String title;
 
-  @Column(columnDefinition = "TEXT")
+  @Column(nullable = false, columnDefinition = "TEXT")
   private String content;
 
   @Enumerated(EnumType.STRING)
-  @Column
+  @Column(nullable = false)
   private NoticeTag tag;
 
   @Column(name = "image_url")
