@@ -31,10 +31,10 @@ public class ExpiryItem extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumns({
-    @JoinColumn(name = "group_id", referencedColumnName = "group_id"),
-    @JoinColumn(name = "author_user_id", referencedColumnName = "user_id")
+    @JoinColumn(name = "group_id", referencedColumnName = "group_id", nullable = false),
+    @JoinColumn(name = "author_user_id", referencedColumnName = "user_id", nullable = false)
   })
   private GroupMember authorMember;
 
