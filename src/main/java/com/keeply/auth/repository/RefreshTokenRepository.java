@@ -1,3 +1,3 @@
-package com.keeply.auth.entity;
+package com.keeply.auth.repository;
 
 public class RefreshTokenRepository {}
