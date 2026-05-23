@@ -17,11 +17,17 @@ public class JwtProvider {
   private final JwtProperties jwtProperties;
 
   public String generateAccessToken(Long userId) {
-    return generateToken(userId, jwtProperties.getAccessTokenExpiration());
+    return generateToken(userId, "access", jwtProperties.getAccessTokenExpiration());
   }
 
   public String generateRefreshToken(Long userId) {
-    return generateToken(userId, jwtProperties.getRefreshTokenExpiration());
+    return generateToken(userId, "refresh", jwtProperties.getRefreshTokenExpiration());
+  }
+
+  public boolean isAccessToken(String token) {
+    Claims claims =
+        Jwts.parser().verifyWith(getSecretKey()).build().parseSignedClaims(token).getPayload();
+    return "access".equals(claims.get("type", String.class));
   }
 
   public boolean validateToken(String token) {
@@ -39,11 +45,12 @@ public class JwtProvider {
     return Long.parseLong(claims.getSubject());
   }
 
-  private String generateToken(Long userId, long expiration) {
+  private String generateToken(Long userId, String type, long expiration) {
     Date now = new Date();
     Date expiryDate = new Date(now.getTime() + expiration);
     return Jwts.builder()
         .subject(String.valueOf(userId))
+        .claim("type", type)
         .issuedAt(now)
         .expiration(expiryDate)
         .signWith(getSecretKey())
