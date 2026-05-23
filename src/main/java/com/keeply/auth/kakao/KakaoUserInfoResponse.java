@@ -28,10 +28,16 @@ public class KakaoUserInfoResponse {
   }
 
   public String getNickname() {
+    if (kakaoAccount == null || kakaoAccount.getProfile() == null) {
+      return null;
+    }
     return kakaoAccount.getProfile().getNickname();
   }
 
   public String getProfileImageUrl() {
+    if (kakaoAccount == null || kakaoAccount.getProfile() == null) {
+      return null;
+    }
     return kakaoAccount.getProfile().getProfileImageUrl();
   }
 }
