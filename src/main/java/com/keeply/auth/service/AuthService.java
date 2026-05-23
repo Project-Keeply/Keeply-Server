@@ -28,11 +28,14 @@ public class AuthService {
   private final UserRepository userRepository;
   private final RefreshTokenRepository refreshTokenRepository;
 
-  @Transactional
   public LoginResponse login(String code) {
     String kakaoAccessToken = kakaoAuthClient.getAccessToken(code).getAccessToken();
     KakaoUserInfoResponse userInfo = kakaoAuthClient.getUserInfo(kakaoAccessToken);
+    return processLogin(userInfo);
+  }
 
+  @Transactional
+  protected LoginResponse processLogin(KakaoUserInfoResponse userInfo) {
     String kakaoId = String.valueOf(userInfo.getId());
     User user =
         userRepository
