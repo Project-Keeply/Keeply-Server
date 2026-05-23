@@ -37,6 +37,7 @@ public class AuthService {
   @Transactional
   protected LoginResponse processLogin(KakaoUserInfoResponse userInfo) {
     String kakaoId = String.valueOf(userInfo.getId());
+    String nickname = resolveNickname(userInfo.getNickname());
     User user =
         userRepository
             .findByKakaoId(kakaoId)
@@ -45,7 +46,7 @@ public class AuthService {
                   User newUser =
                       User.builder()
                           .kakaoId(kakaoId)
-                          .name(userInfo.getNickname())
+                          .name(nickname)
                           .profileImageUrl(userInfo.getProfileImageUrl())
                           .build();
                   return userRepository.save(Objects.requireNonNull(newUser));
@@ -113,6 +114,13 @@ public class AuthService {
             .findById(Objects.requireNonNull(userId))
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     refreshTokenRepository.deleteByUser(user);
+  }
+
+  private String resolveNickname(String nickname) {
+    if (nickname == null || nickname.isBlank()) {
+      return "사용자";
+    }
+    return nickname;
   }
 
   private String hashToken(String token) {
