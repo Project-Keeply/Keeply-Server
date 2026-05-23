@@ -19,7 +19,7 @@ public class SecurityConfig {
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
   private static final String[] WHITELIST = {
-    "/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
+    "/auth/kakao/callback", "/auth/refresh", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
   };
 
   @Bean
