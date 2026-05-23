@@ -1,9 +1,12 @@
 package com.keeply.common.exception;
 
 import com.keeply.common.response.ApiResponse;
+import io.jsonwebtoken.JwtException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,6 +44,25 @@ public class GlobalExceptionHandler {
             .orElse(ErrorCode.INVALID_INPUT.getMessage());
     return ResponseEntity.status(ErrorCode.INVALID_INPUT.getHttpStatus())
         .body(ApiResponse.failure(message));
+  }
+
+  @ExceptionHandler({JwtException.class, NumberFormatException.class})
+  public ResponseEntity<ApiResponse<Void>> handleJwtException(Exception e) {
+    return ResponseEntity.status(ErrorCode.INVALID_TOKEN.getHttpStatus())
+        .body(ApiResponse.failure(ErrorCode.INVALID_TOKEN.getMessage()));
+  }
+
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(
+      AuthenticationException e) {
+    return ResponseEntity.status(ErrorCode.INVALID_TOKEN.getHttpStatus())
+        .body(ApiResponse.failure(ErrorCode.INVALID_TOKEN.getMessage()));
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
+    return ResponseEntity.status(ErrorCode.INVALID_TOKEN.getHttpStatus())
+        .body(ApiResponse.failure(ErrorCode.INVALID_TOKEN.getMessage()));
   }
 
   @ExceptionHandler(Exception.class)
