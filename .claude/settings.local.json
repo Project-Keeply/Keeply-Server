@@ -6,7 +6,8 @@
       "Bash(git *)",
       "Bash(./gradlew spotlessApply --info)",
       "Bash(./gradlew spotlessApply --stacktrace)",
-      "Bash(./gradlew build *)"
+      "Bash(./gradlew build *)",
+      "Bash(./gradlew compileJava *)"
     ]
   }
 }
