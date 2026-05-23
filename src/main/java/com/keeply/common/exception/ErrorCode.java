@@ -14,6 +14,7 @@ public enum ErrorCode {
 
   // Auth
   INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_001", "유효하지 않은 토큰입니다."),
+  KAKAO_AUTH_FAILED(HttpStatus.BAD_GATEWAY, "AUTH_002", "카카오 인증에 실패하였습니다."),
 
   // User
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "존재하지 않는 유저입니다.");
