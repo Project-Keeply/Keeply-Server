@@ -3,6 +3,7 @@ package com.keeply.auth.kakao;
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -15,7 +16,9 @@ import org.springframework.web.client.RestClientException;
 public class KakaoAuthClient {
 
   private final KakaoProperties kakaoProperties;
-  private final RestClient restClient = RestClient.create();
+
+  @Qualifier("kakaoRestClient")
+  private final RestClient restClient;
 
   public KakaoTokenResponse getAccessToken(String code) {
     MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
