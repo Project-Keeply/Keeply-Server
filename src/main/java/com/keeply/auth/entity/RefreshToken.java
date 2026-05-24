@@ -43,4 +43,9 @@ public class RefreshToken {
   @NotNull
   @Column(name = "expiry_date", nullable = false)
   private LocalDateTime expiryDate;
+
+  public void updateToken(String tokenHash, LocalDateTime expiryDate) {
+    this.tokenHash = tokenHash;
+    this.expiryDate = expiryDate;
+  }
 }

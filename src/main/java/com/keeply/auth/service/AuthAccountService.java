@@ -12,6 +12,7 @@ import com.keeply.user.repository.UserRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -50,15 +51,7 @@ public class AuthAccountService {
     String accessToken = jwtProvider.generateAccessToken(user.getId());
     String refreshToken = jwtProvider.generateRefreshToken(user.getId());
 
-    refreshTokenRepository.findByUser(user).ifPresent(refreshTokenRepository::delete);
-
-    RefreshToken newToken =
-        RefreshToken.builder()
-            .user(user)
-            .tokenHash(hashToken(refreshToken))
-            .expiryDate(jwtProvider.getRefreshTokenExpiryDate())
-            .build();
-    refreshTokenRepository.save(Objects.requireNonNull(newToken));
+    saveOrUpdateRefreshToken(user, refreshToken);
 
     return LoginResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
   }
@@ -87,19 +80,34 @@ public class AuthAccountService {
     String newAccessToken = jwtProvider.generateAccessToken(userId);
     String newRefreshToken = jwtProvider.generateRefreshToken(userId);
 
-    refreshTokenRepository.delete(savedToken);
-    RefreshToken rotatedToken =
-        RefreshToken.builder()
-            .user(user)
-            .tokenHash(hashToken(newRefreshToken))
-            .expiryDate(jwtProvider.getRefreshTokenExpiryDate())
-            .build();
-    refreshTokenRepository.save(Objects.requireNonNull(rotatedToken));
+    savedToken.updateToken(hashToken(newRefreshToken), jwtProvider.getRefreshTokenExpiryDate());
 
     return LoginResponse.builder()
         .accessToken(newAccessToken)
         .refreshToken(newRefreshToken)
         .build();
+  }
+
+  private void saveOrUpdateRefreshToken(User user, String refreshToken) {
+    String hashedToken = hashToken(refreshToken);
+    LocalDateTime expiryDate = jwtProvider.getRefreshTokenExpiryDate();
+
+    RefreshToken token =
+        refreshTokenRepository
+            .findByUser(user)
+            .map(
+                existing -> {
+                  existing.updateToken(hashedToken, expiryDate);
+                  return existing;
+                })
+            .orElseGet(
+                () ->
+                    RefreshToken.builder()
+                        .user(user)
+                        .tokenHash(hashedToken)
+                        .expiryDate(expiryDate)
+                        .build());
+    refreshTokenRepository.save(Objects.requireNonNull(token));
   }
 
   @Transactional

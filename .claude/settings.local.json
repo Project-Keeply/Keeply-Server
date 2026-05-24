@@ -8,7 +8,8 @@
       "Bash(./gradlew spotlessApply --stacktrace)",
       "Bash(./gradlew build *)",
       "Bash(./gradlew compileJava *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "WebFetch(domain:developers.kakao.com)"
     ]
   }
 }
