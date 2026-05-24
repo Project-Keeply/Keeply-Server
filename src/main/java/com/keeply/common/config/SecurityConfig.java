@@ -1,5 +1,7 @@
 package com.keeply.common.config;
 
+import com.keeply.auth.jwt.JwtAccessDeniedHandler;
+import com.keeply.auth.jwt.JwtAuthenticationEntryPoint;
 import com.keeply.auth.jwt.JwtAuthenticationFilter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+  private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
   private static final String[] WHITELIST = {
     "/auth/kakao/callback", "/auth/refresh", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
@@ -34,6 +38,11 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth -> auth.requestMatchers(WHITELIST).permitAll().anyRequest().authenticated())
+        .exceptionHandling(
+            exception ->
+                exception
+                    .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                    .accessDeniedHandler(jwtAccessDeniedHandler))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
