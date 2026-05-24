@@ -61,8 +61,8 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
-    return ResponseEntity.status(ErrorCode.INVALID_TOKEN.getHttpStatus())
-        .body(ApiResponse.failure(ErrorCode.INVALID_TOKEN.getMessage()));
+    return ResponseEntity.status(ErrorCode.FORBIDDEN.getHttpStatus())
+        .body(ApiResponse.failure(ErrorCode.FORBIDDEN.getMessage()));
   }
 
   @ExceptionHandler(Exception.class)
