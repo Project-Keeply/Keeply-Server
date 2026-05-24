@@ -13,7 +13,6 @@ import com.keeply.user.repository.UserRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -65,7 +64,7 @@ public class AuthService {
         RefreshToken.builder()
             .user(user)
             .tokenHash(hashToken(refreshToken))
-            .expiryDate(LocalDateTime.now().plusDays(14))
+            .expiryDate(jwtProvider.getRefreshTokenExpiryDate())
             .build();
     refreshTokenRepository.save(Objects.requireNonNull(newToken));
 
@@ -101,7 +100,7 @@ public class AuthService {
         RefreshToken.builder()
             .user(user)
             .tokenHash(hashToken(newRefreshToken))
-            .expiryDate(LocalDateTime.now().plusDays(14))
+            .expiryDate(jwtProvider.getRefreshTokenExpiryDate())
             .build();
     refreshTokenRepository.save(Objects.requireNonNull(rotatedToken));
 

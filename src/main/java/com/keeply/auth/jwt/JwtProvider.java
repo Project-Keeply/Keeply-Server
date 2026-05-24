@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,11 @@ public class JwtProvider {
 
   public String generateRefreshToken(Long userId) {
     return generateToken(userId, "refresh", jwtProperties.getRefreshTokenExpiration());
+  }
+
+  public LocalDateTime getRefreshTokenExpiryDate() {
+    long expirationMillis = jwtProperties.getRefreshTokenExpiration();
+    return LocalDateTime.now().plusNanos(expirationMillis * 1_000_000L);
   }
 
   public boolean isAccessToken(String token) {
