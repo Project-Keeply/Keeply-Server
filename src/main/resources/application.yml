@@ -27,6 +27,16 @@ spring:
       com.keeply: DEBUG
       org.hibernate.SQL: DEBUG
 
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 7200000
+  refresh-token-expiration: 1209600000
+
+kakao:
+  client-id: ${KAKAO_CLIENT_ID}
+  client-secret: ${KAKAO_CLIENT_SECRET}
+  redirect-uri: ${KAKAO_REDIRECT_URI}
+
 ---
 
 spring:
@@ -45,3 +55,13 @@ spring:
   logging:
     level:
       com.keeply: INFO
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 7200000
+  refresh-token-expiration: 1209600000
+
+kakao:
+  client-id: ${KAKAO_CLIENT_ID}
+  client-secret: ${KAKAO_CLIENT_SECRET}
+  redirect-uri: ${KAKAO_REDIRECT_URI}
