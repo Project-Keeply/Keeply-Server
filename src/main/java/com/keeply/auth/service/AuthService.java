@@ -36,7 +36,11 @@ public class AuthService {
 
   @Transactional
   protected LoginResponse processLogin(KakaoUserInfoResponse userInfo) {
-    String kakaoId = String.valueOf(userInfo.getId());
+    Long kakaoUserId = userInfo.getId();
+    if (kakaoUserId == null) {
+      throw new CustomException(ErrorCode.KAKAO_AUTH_FAILED);
+    }
+    String kakaoId = kakaoUserId.toString();
     String nickname = resolveNickname(userInfo.getNickname());
     User user =
         userRepository
