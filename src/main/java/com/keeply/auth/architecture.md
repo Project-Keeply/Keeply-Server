@@ -6,14 +6,15 @@
 
 ## 2. Authentication Flow (Backend Callback)
 1. Client moves user to Kakao authorization endpoint.
-2. Kakao redirects to backend callback: `GET /auth/kakao/callback?code=...&state=...`.
-3. Backend validates `state`.
-4. Backend exchanges `code` for Kakao access token.
-5. Backend calls Kakao user info API and extracts `kakaoId`.
-6. Backend finds user by `kakaoId`; creates user if not found.
-7. Backend issues Keeply JWT tokens (`accessToken`, `refreshToken`).
-8. Client uses `Authorization: Bearer <accessToken>` for protected APIs.
-9. On access token expiry, client calls refresh endpoint.
+2. Kakao redirects the client with `code` (and `state`).
+3. Client sends `POST /auth/kakao/callback` with `{ "code": "...", "state": "..." }` in the request body.
+4. Backend validates `state`.
+5. Backend exchanges `code` for Kakao access token.
+6. Backend calls Kakao user info API and extracts `kakaoId`.
+7. Backend finds user by `kakaoId`; creates user if not found.
+8. Backend issues Keeply JWT tokens (`accessToken`, `refreshToken`).
+9. Client uses `Authorization: Bearer <accessToken>` for protected APIs.
+10. On access token expiry, client calls refresh endpoint.
 
 ## 3. Final Token Policy
 - Multi-device policy: one refresh token per user.
@@ -25,8 +26,8 @@
   - Refresh Token: 14 days
 
 ## 4. Endpoint Contract
-- `GET /auth/kakao/callback`
-  - Input: `code`, `state`
+- `POST /auth/kakao/callback`
+  - Input (request body): `{ "code": "...", "state": "..." }`
   - Output: `accessToken`, `refreshToken`, `tokenType`, `expiresIn`
   - Failure:
     - `400`: invalid `code` or `state`
@@ -34,7 +35,7 @@
     - `500`: Kakao integration failure
 
 - `POST /auth/refresh`
-  - Input: refresh token
+  - Input (request body): `{ "refreshToken": "..." }`
   - Behavior: validate token, verify stored hash, issue new access token and new refresh token (rotation)
 
 - `POST /auth/logout`
@@ -72,14 +73,15 @@
 
 ## 2. 인증 플로우 (백엔드 콜백 방식)
 1. 클라이언트가 사용자를 Kakao 인가 엔드포인트로 이동시킨다.
-2. Kakao가 백엔드 콜백으로 리다이렉트한다: `GET /auth/kakao/callback?code=...&state=...`.
-3. 백엔드가 `state`를 검증한다.
-4. 백엔드가 `code`로 Kakao access token을 발급받는다.
-5. 백엔드가 Kakao 사용자 정보 API를 호출해 `kakaoId`를 추출한다.
-6. 백엔드가 `kakaoId`로 사용자 조회 후, 없으면 신규 생성한다.
-7. 백엔드가 Keeply JWT(`accessToken`, `refreshToken`)를 발급한다.
-8. 클라이언트는 보호 API 호출 시 `Authorization: Bearer <accessToken>`을 사용한다.
-9. Access Token 만료 시 클라이언트가 refresh 엔드포인트를 호출한다.
+2. Kakao가 클라이언트에게 `code`와 `state`를 전달한다.
+3. 클라이언트가 `POST /auth/kakao/callback` 요청 본문으로 `{ "code": "...", "state": "..." }`를 전송한다.
+4. 백엔드가 `state`를 검증한다.
+5. 백엔드가 `code`로 Kakao access token을 발급받는다.
+6. 백엔드가 Kakao 사용자 정보 API를 호출해 `kakaoId`를 추출한다.
+7. 백엔드가 `kakaoId`로 사용자 조회 후, 없으면 신규 생성한다.
+8. 백엔드가 Keeply JWT(`accessToken`, `refreshToken`)를 발급한다.
+9. 클라이언트는 보호 API 호출 시 `Authorization: Bearer <accessToken>`을 사용한다.
+10. Access Token 만료 시 클라이언트가 refresh 엔드포인트를 호출한다.
 
 ## 3. 최종 토큰 정책 
 - 다기기 정책: 사용자당 Refresh Token 1개.
@@ -91,8 +93,8 @@
   - Refresh Token: 14일
 
 ## 4. 엔드포인트 계약
-- `GET /auth/kakao/callback`
-  - 입력: `code`, `state`
+- `POST /auth/kakao/callback`
+  - 입력 (request body): `{ "code": "...", "state": "..." }`
   - 출력: `accessToken`, `refreshToken`, `tokenType`, `expiresIn`
   - 실패:
     - `400`: 잘못된 `code` 또는 `state`
@@ -100,7 +102,7 @@
     - `500`: Kakao 연동 실패
 
 - `POST /auth/refresh`
-  - 입력: refresh token
+  - 입력 (request body): `{ "refreshToken": "..." }`
   - 동작: 토큰 검증, 저장된 해시 검증 후 access/refresh 재발급(rotation)
 
 - `POST /auth/logout`
