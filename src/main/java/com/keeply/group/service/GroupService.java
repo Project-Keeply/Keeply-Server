@@ -8,4 +8,6 @@ public interface GroupService {
   GroupResponse getMyGroup(Long userId);
 
   GroupResponse updateMyGroup(Long userId, UpdateGroupRequest request);
+
+  void deleteMyGroup(Long userId);
 }

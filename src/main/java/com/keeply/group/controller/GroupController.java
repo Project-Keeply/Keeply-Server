@@ -6,6 +6,7 @@ import com.keeply.group.dto.response.GroupResponse;
 import com.keeply.group.service.GroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,5 +31,11 @@ public class GroupController {
       @AuthenticationPrincipal Long userId, @RequestBody UpdateGroupRequest request) {
     GroupResponse response = groupService.updateMyGroup(userId, request);
     return ApiResponse.success(response);
+  }
+
+  @DeleteMapping("/me")
+  public ApiResponse<Void> deleteMyGroup(@AuthenticationPrincipal Long userId) {
+    groupService.deleteMyGroup(userId);
+    return ApiResponse.success(null);
   }
 }
