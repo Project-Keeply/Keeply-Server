@@ -44,4 +44,8 @@ public class User extends BaseTimeEntity {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void updateName(String name) {
+    this.name = name;
+  }
 }
