@@ -2,7 +2,9 @@ package com.keeply.onboarding.controller;
 
 import com.keeply.common.response.ApiResponse;
 import com.keeply.onboarding.dto.request.OwnerOnboardingRequest;
+import com.keeply.onboarding.dto.request.StaffOnboardingRequest;
 import com.keeply.onboarding.dto.response.OwnerOnboardingResponse;
+import com.keeply.onboarding.dto.response.StaffOnboardingResponse;
 import com.keeply.onboarding.service.OnboardingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,13 @@ public class OnboardingController {
   public ApiResponse<OwnerOnboardingResponse> onboardOwner(
       @AuthenticationPrincipal Long userId, @RequestBody @Valid OwnerOnboardingRequest request) {
     OwnerOnboardingResponse response = onboardingService.onboardOwner(userId, request);
+    return ApiResponse.success(response);
+  }
+
+  @PostMapping("/staff")
+  public ApiResponse<StaffOnboardingResponse> onboardStaff(
+      @AuthenticationPrincipal Long userId, @RequestBody @Valid StaffOnboardingRequest request) {
+    StaffOnboardingResponse response = onboardingService.onboardStaff(userId, request);
     return ApiResponse.success(response);
   }
 }
