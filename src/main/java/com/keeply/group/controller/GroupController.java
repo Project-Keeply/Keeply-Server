@@ -4,6 +4,7 @@ import com.keeply.common.response.ApiResponse;
 import com.keeply.group.dto.request.UpdateGroupRequest;
 import com.keeply.group.dto.response.GroupResponse;
 import com.keeply.group.service.GroupService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,7 +30,7 @@ public class GroupController {
 
   @PatchMapping("/me")
   public ApiResponse<GroupResponse> updateMyGroup(
-      @AuthenticationPrincipal Long userId, @RequestBody UpdateGroupRequest request) {
+      @AuthenticationPrincipal Long userId, @RequestBody @Valid UpdateGroupRequest request) {
     GroupResponse response = groupService.updateMyGroup(userId, request);
     return ApiResponse.success(response);
   }
