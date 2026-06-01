@@ -4,6 +4,7 @@ import com.keeply.common.response.ApiResponse;
 import io.jsonwebtoken.JwtException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -63,6 +64,14 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
     return ResponseEntity.status(ErrorCode.FORBIDDEN.getHttpStatus())
         .body(ApiResponse.failure(ErrorCode.FORBIDDEN.getMessage()));
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(
+      DataIntegrityViolationException e) {
+    log.warn("Data integrity violation", e);
+    return ResponseEntity.status(ErrorCode.USER_ALREADY_IN_GROUP.getHttpStatus())
+        .body(ApiResponse.failure(ErrorCode.USER_ALREADY_IN_GROUP.getMessage()));
   }
 
   @ExceptionHandler(Exception.class)
