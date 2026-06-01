@@ -22,7 +22,8 @@ public enum ErrorCode {
 
   // Group
   USER_ALREADY_IN_GROUP(HttpStatus.CONFLICT, "GROUP_001", "이미 그룹에 소속된 유저입니다."),
-  INVITE_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GROUP_002", "초대코드 생성에 실패했습니다.");
+  INVITE_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "GROUP_002", "초대코드 생성에 실패했습니다."),
+  INVITE_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_003", "유효하지 않은 초대코드입니다.");
 
   @NonNull private final HttpStatus httpStatus;
   private final String code;
