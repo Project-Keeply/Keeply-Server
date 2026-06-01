@@ -8,7 +8,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
-import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,7 +33,4 @@ public class Group extends BaseTimeEntity {
   @NotBlank
   @Column(name = "invite_code", nullable = false)
   private String inviteCode;
-
-  @Column(name = "deleted_at")
-  private LocalDateTime deletedAt;
 }
