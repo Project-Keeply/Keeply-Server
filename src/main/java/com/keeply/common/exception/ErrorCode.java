@@ -26,7 +26,8 @@ public enum ErrorCode {
   INVITE_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_003", "유효하지 않은 초대코드입니다."),
   USER_HAS_NO_GROUP(HttpStatus.NOT_FOUND, "GROUP_004", "소속된 그룹이 없습니다."),
   GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_005", "존재하지 않는 그룹입니다."),
-  NOT_GROUP_OWNER(HttpStatus.FORBIDDEN, "GROUP_006", "그룹 점장만 가능한 작업입니다.");
+  NOT_GROUP_OWNER(HttpStatus.FORBIDDEN, "GROUP_006", "그룹 점장만 가능한 작업입니다."),
+  OWNER_CANNOT_LEAVE(HttpStatus.BAD_REQUEST, "GROUP_007", "점장은 그룹을 탈퇴할 수 없습니다. 그룹 삭제만 가능합니다.");
 
   @NonNull private final HttpStatus httpStatus;
   private final String code;

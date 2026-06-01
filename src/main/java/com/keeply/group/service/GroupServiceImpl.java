@@ -86,4 +86,19 @@ public class GroupServiceImpl implements GroupService {
 
     return GroupResponse.of(group, groupMember.getRole());
   }
+
+  @Override
+  @Transactional
+  public void leaveMyGroup(Long userId) {
+    GroupMember groupMember =
+        groupMemberRepository
+            .findByUserId(userId)
+            .orElseThrow(() -> new CustomException(ErrorCode.USER_HAS_NO_GROUP));
+
+    if (groupMember.getRole() == GroupRole.OWNER) {
+      throw new CustomException(ErrorCode.OWNER_CANNOT_LEAVE);
+    }
+
+    groupMemberRepository.delete(groupMember);
+  }
 }
