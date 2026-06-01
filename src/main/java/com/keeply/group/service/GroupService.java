@@ -10,4 +10,6 @@ public interface GroupService {
   GroupResponse updateMyGroup(Long userId, UpdateGroupRequest request);
 
   void deleteMyGroup(Long userId);
+
+  GroupResponse reissueInviteCode(Long userId);
 }

@@ -50,4 +50,8 @@ public class Group extends BaseTimeEntity {
       this.storeBrand = storeBrand;
     }
   }
+
+  public void updateInviteCode(String inviteCode) {
+    this.inviteCode = inviteCode;
+  }
 }

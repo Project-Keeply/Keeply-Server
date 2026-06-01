@@ -38,4 +38,10 @@ public class GroupController {
     groupService.deleteMyGroup(userId);
     return ApiResponse.success(null);
   }
+
+  @PatchMapping("/me/invite-code")
+  public ApiResponse<GroupResponse> reissueInviteCode(@AuthenticationPrincipal Long userId) {
+    GroupResponse response = groupService.reissueInviteCode(userId);
+    return ApiResponse.success(response);
+  }
 }
