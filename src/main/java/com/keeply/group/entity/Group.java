@@ -41,4 +41,13 @@ public class Group extends BaseTimeEntity {
   @NotBlank
   @Column(name = "invite_code", nullable = false, unique = true)
   private String inviteCode;
+
+  public void updateInfo(String name, StoreBrand storeBrand) {
+    if (name != null && !name.isBlank()) {
+      this.name = name;
+    }
+    if (storeBrand != null) {
+      this.storeBrand = storeBrand;
+    }
+  }
 }

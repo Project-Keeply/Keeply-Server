@@ -2,8 +2,11 @@ package com.keeply.group.service;
 
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
+import com.keeply.group.dto.request.UpdateGroupRequest;
 import com.keeply.group.dto.response.GroupResponse;
+import com.keeply.group.entity.Group;
 import com.keeply.group.entity.GroupMember;
+import com.keeply.group.entity.GroupRole;
 import com.keeply.group.repository.GroupMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,5 +27,23 @@ public class GroupServiceImpl implements GroupService {
             .orElseThrow(() -> new CustomException(ErrorCode.USER_HAS_NO_GROUP));
 
     return GroupResponse.of(groupMember.getGroup(), groupMember.getRole());
+  }
+
+  @Override
+  @Transactional
+  public GroupResponse updateMyGroup(Long userId, UpdateGroupRequest request) {
+    GroupMember groupMember =
+        groupMemberRepository
+            .findByUserId(userId)
+            .orElseThrow(() -> new CustomException(ErrorCode.USER_HAS_NO_GROUP));
+
+    if (groupMember.getRole() != GroupRole.OWNER) {
+      throw new CustomException(ErrorCode.NOT_GROUP_OWNER);
+    }
+
+    Group group = groupMember.getGroup();
+    group.updateInfo(request.getName(), request.getStoreBrand());
+
+    return GroupResponse.of(group, groupMember.getRole());
   }
 }
