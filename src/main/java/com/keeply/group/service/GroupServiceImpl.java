@@ -9,7 +9,7 @@ import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
 import com.keeply.group.repository.GroupMemberRepository;
 import com.keeply.group.repository.GroupRepository;
-import com.keeply.onboarding.util.InviteCodeGenerator;
+import com.keeply.group.util.InviteCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

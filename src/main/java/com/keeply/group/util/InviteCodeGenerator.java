@@ -1,4 +1,4 @@
-package com.keeply.onboarding.util;
+package com.keeply.group.util;
 
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
