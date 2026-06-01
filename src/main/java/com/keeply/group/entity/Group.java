@@ -31,6 +31,6 @@ public class Group extends BaseTimeEntity {
   private String name;
 
   @NotBlank
-  @Column(name = "invite_code", nullable = false)
+  @Column(name = "invite_code", nullable = false, unique = true)
   private String inviteCode;
 }
