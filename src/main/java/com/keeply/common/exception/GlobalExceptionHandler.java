@@ -70,8 +70,24 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(
       DataIntegrityViolationException e) {
     log.warn("Data integrity violation", e);
-    return ResponseEntity.status(ErrorCode.USER_ALREADY_IN_GROUP.getHttpStatus())
-        .body(ApiResponse.failure(ErrorCode.USER_ALREADY_IN_GROUP.getMessage()));
+    ErrorCode errorCode = resolveDataIntegrityErrorCode(e);
+    return ResponseEntity.status(errorCode.getHttpStatus())
+        .body(ApiResponse.failure(errorCode.getMessage()));
+  }
+
+  private ErrorCode resolveDataIntegrityErrorCode(DataIntegrityViolationException e) {
+    Throwable cause = e.getMostSpecificCause();
+    if (cause == null || cause.getMessage() == null) {
+      return ErrorCode.INTERNAL_SERVER_ERROR;
+    }
+    String message = cause.getMessage().toLowerCase();
+    if (message.contains("group_members") || message.contains("user_id")) {
+      return ErrorCode.USER_ALREADY_IN_GROUP;
+    }
+    if (message.contains("invite_code")) {
+      return ErrorCode.INVITE_CODE_GENERATION_FAILED;
+    }
+    return ErrorCode.INTERNAL_SERVER_ERROR;
   }
 
   @ExceptionHandler(Exception.class)
