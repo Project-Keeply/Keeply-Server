@@ -80,9 +80,12 @@ public class GroupServiceImpl implements GroupService {
       throw new CustomException(ErrorCode.NOT_GROUP_OWNER);
     }
 
-    String newInviteCode = inviteCodeGenerator.generateUniqueInviteCode();
     Group group = groupMember.getGroup();
-    group.updateInviteCode(newInviteCode);
+    inviteCodeGenerator.generateAndPersist(
+        inviteCode -> {
+          group.updateInviteCode(inviteCode);
+          return group;
+        });
 
     return GroupResponse.of(group, groupMember.getRole());
   }

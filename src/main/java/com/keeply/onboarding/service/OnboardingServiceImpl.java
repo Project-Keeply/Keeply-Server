@@ -39,15 +39,17 @@ public class OnboardingServiceImpl implements OnboardingService {
       throw new CustomException(ErrorCode.USER_ALREADY_IN_GROUP);
     }
 
-    String inviteCode = inviteCodeGenerator.generateUniqueInviteCode();
-
-    Group group =
-        Group.builder()
-            .name(request.getStoreName())
-            .storeBrand(request.getStoreBrand())
-            .inviteCode(inviteCode)
-            .build();
-    Group savedGroup = groupRepository.save(group);
+    Group savedGroup =
+        inviteCodeGenerator.generateAndPersist(
+            inviteCode -> {
+              Group group =
+                  Group.builder()
+                      .name(request.getStoreName())
+                      .storeBrand(request.getStoreBrand())
+                      .inviteCode(inviteCode)
+                      .build();
+              return groupRepository.save(group);
+            });
 
     GroupMember groupMember =
         GroupMember.builder().user(user).group(savedGroup).role(GroupRole.OWNER).build();
