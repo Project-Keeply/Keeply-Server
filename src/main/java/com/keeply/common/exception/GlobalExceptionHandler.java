@@ -81,7 +81,7 @@ public class GlobalExceptionHandler {
       return ErrorCode.INTERNAL_SERVER_ERROR;
     }
     String message = cause.getMessage().toLowerCase();
-    if (message.contains("group_members") || message.contains("user_id")) {
+    if (message.contains("group_members")) {
       return ErrorCode.USER_ALREADY_IN_GROUP;
     }
     if (message.contains("invite_code")) {
