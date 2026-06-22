@@ -4,6 +4,7 @@ import com.keeply.common.response.ApiResponse;
 import io.jsonwebtoken.JwtException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -63,6 +64,30 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
     return ResponseEntity.status(ErrorCode.FORBIDDEN.getHttpStatus())
         .body(ApiResponse.failure(ErrorCode.FORBIDDEN.getMessage()));
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(
+      DataIntegrityViolationException e) {
+    log.warn("Data integrity violation", e);
+    ErrorCode errorCode = resolveDataIntegrityErrorCode(e);
+    return ResponseEntity.status(errorCode.getHttpStatus())
+        .body(ApiResponse.failure(errorCode.getMessage()));
+  }
+
+  private ErrorCode resolveDataIntegrityErrorCode(DataIntegrityViolationException e) {
+    Throwable cause = e.getMostSpecificCause();
+    if (cause == null || cause.getMessage() == null) {
+      return ErrorCode.INTERNAL_SERVER_ERROR;
+    }
+    String message = cause.getMessage().toLowerCase();
+    if (message.contains("group_members")) {
+      return ErrorCode.USER_ALREADY_IN_GROUP;
+    }
+    if (message.contains("invite_code")) {
+      return ErrorCode.INVITE_CODE_GENERATION_FAILED;
+    }
+    return ErrorCode.INTERNAL_SERVER_ERROR;
   }
 
   @ExceptionHandler(Exception.class)

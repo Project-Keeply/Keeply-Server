@@ -3,12 +3,14 @@ package com.keeply.group.entity;
 import com.keeply.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,10 +33,25 @@ public class Group extends BaseTimeEntity {
   @Column(nullable = false)
   private String name;
 
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  @Column(name = "store_brand", nullable = false)
+  private StoreBrand storeBrand;
+
   @NotBlank
-  @Column(name = "invite_code", nullable = false)
+  @Column(name = "invite_code", nullable = false, unique = true)
   private String inviteCode;
 
-  @Column(name = "deleted_at")
-  private LocalDateTime deletedAt;
+  public void updateInfo(String name, StoreBrand storeBrand) {
+    if (name != null && !name.isBlank()) {
+      this.name = name;
+    }
+    if (storeBrand != null) {
+      this.storeBrand = storeBrand;
+    }
+  }
+
+  public void updateInviteCode(String inviteCode) {
+    this.inviteCode = inviteCode;
+  }
 }
