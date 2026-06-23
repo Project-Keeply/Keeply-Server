@@ -59,4 +59,10 @@ public class GroupMember {
   public void markDeleted() {
     this.deletedAt = LocalDateTime.now();
   }
+
+  public void reactivate(Group newGroup, GroupRole newRole) {
+    this.group = newGroup;
+    this.role = newRole;
+    this.deletedAt = null;
+  }
 }

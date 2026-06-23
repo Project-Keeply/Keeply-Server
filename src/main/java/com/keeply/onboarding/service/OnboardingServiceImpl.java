@@ -14,6 +14,7 @@ import com.keeply.onboarding.dto.response.OwnerOnboardingResponse;
 import com.keeply.onboarding.dto.response.StaffOnboardingResponse;
 import com.keeply.user.entity.User;
 import com.keeply.user.repository.UserRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +36,8 @@ public class OnboardingServiceImpl implements OnboardingService {
             .findById(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    if (groupMemberRepository.existsByUserId(userId)) {
+    Optional<GroupMember> existing = groupMemberRepository.findByUserIdIncludingDeleted(userId);
+    if (existing.isPresent() && existing.get().getDeletedAt() == null) {
       throw new CustomException(ErrorCode.USER_ALREADY_IN_GROUP);
     }
 
@@ -51,9 +53,12 @@ public class OnboardingServiceImpl implements OnboardingService {
               return groupRepository.save(group);
             });
 
-    GroupMember groupMember =
-        GroupMember.builder().user(user).group(savedGroup).role(GroupRole.OWNER).build();
-    groupMemberRepository.save(groupMember);
+    if (existing.isPresent()) {
+      existing.get().reactivate(savedGroup, GroupRole.OWNER);
+    } else {
+      groupMemberRepository.save(
+          GroupMember.builder().user(user).group(savedGroup).role(GroupRole.OWNER).build());
+    }
 
     user.updateName(request.getName());
 
@@ -68,7 +73,8 @@ public class OnboardingServiceImpl implements OnboardingService {
             .findById(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    if (groupMemberRepository.existsByUserId(userId)) {
+    Optional<GroupMember> existing = groupMemberRepository.findByUserIdIncludingDeleted(userId);
+    if (existing.isPresent() && existing.get().getDeletedAt() == null) {
       throw new CustomException(ErrorCode.USER_ALREADY_IN_GROUP);
     }
 
@@ -77,9 +83,12 @@ public class OnboardingServiceImpl implements OnboardingService {
             .findByInviteCode(request.getInviteCode())
             .orElseThrow(() -> new CustomException(ErrorCode.INVITE_CODE_NOT_FOUND));
 
-    GroupMember groupMember =
-        GroupMember.builder().user(user).group(group).role(GroupRole.STAFF).build();
-    groupMemberRepository.save(groupMember);
+    if (existing.isPresent()) {
+      existing.get().reactivate(group, GroupRole.STAFF);
+    } else {
+      groupMemberRepository.save(
+          GroupMember.builder().user(user).group(group).role(GroupRole.STAFF).build());
+    }
 
     user.updateName(request.getName());
 

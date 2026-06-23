@@ -11,6 +11,9 @@ import org.springframework.data.repository.query.Param;
 public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> {
   Optional<GroupMember> findByUserId(Long userId);
 
+  @Query(value = "SELECT * FROM group_members WHERE user_id = :userId", nativeQuery = true)
+  Optional<GroupMember> findByUserIdIncludingDeleted(@Param("userId") Long userId);
+
   Optional<GroupMember> findByGroupIdAndUserId(Long groupId, Long userId);
 
   boolean existsByUserId(Long userId);
