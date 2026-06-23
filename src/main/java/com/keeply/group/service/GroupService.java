@@ -12,6 +12,4 @@ public interface GroupService {
   void deleteMyGroup(Long userId);
 
   GroupResponse reissueInviteCode(Long userId);
-
-  void leaveMyGroup(Long userId);
 }
