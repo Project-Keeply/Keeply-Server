@@ -42,6 +42,9 @@ public class User extends BaseTimeEntity {
   @Column(name = "updated_at")
   private LocalDateTime updatedAt;
 
+  @Column(name = "is_name_customized", nullable = false)
+  private boolean isNameCustomized;
+
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
@@ -50,5 +53,21 @@ public class User extends BaseTimeEntity {
       throw new IllegalArgumentException("이름은 null 또는 공백일 수 없습니다.");
     }
     this.name = name;
+    this.isNameCustomized = true;
+  }
+
+  public void syncFromKakao(String kakaoNickname, String kakaoProfileImageUrl) {
+    if (!isNameCustomized && kakaoNickname != null && !kakaoNickname.isBlank()) {
+      this.name = kakaoNickname;
+    }
+    this.profileImageUrl = kakaoProfileImageUrl;
+  }
+
+  public void markDeleted() {
+    this.deletedAt = LocalDateTime.now();
+  }
+
+  public boolean isDeleted() {
+    return this.deletedAt != null;
   }
 }
