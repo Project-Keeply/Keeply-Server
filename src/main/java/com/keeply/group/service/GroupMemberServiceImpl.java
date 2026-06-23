@@ -25,7 +25,7 @@ public class GroupMemberServiceImpl implements GroupMemberService {
       throw new CustomException(ErrorCode.NOT_GROUP_MEMBER);
     }
 
-    return groupMemberRepository.findByGroupId(groupId).stream()
+    return groupMemberRepository.findByGroupIdWithUser(groupId).stream()
         .sorted(
             Comparator.comparing((GroupMember m) -> m.getRole() != GroupRole.OWNER)
                 .thenComparing(GroupMember::getJoinedAt))
