@@ -44,6 +44,6 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     if (groupMember.getRole() == GroupRole.OWNER) {
       throw new CustomException(ErrorCode.OWNER_CANNOT_LEAVE);
     }
-    groupMemberRepository.delete(groupMember);
+    groupMember.markDeleted();
   }
 }

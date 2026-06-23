@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -27,6 +28,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Table(name = "group_members", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"}))
 @EntityListeners(AuditingEntityListener.class)
+@SQLRestriction("deleted_at IS NULL")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -50,4 +52,11 @@ public class GroupMember {
   @CreatedDate
   @Column(name = "joined_at", nullable = false, updatable = false)
   private LocalDateTime joinedAt;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
+
+  public void markDeleted() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }
