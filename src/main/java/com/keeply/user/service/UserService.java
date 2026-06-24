@@ -7,4 +7,6 @@ public interface UserService {
   UserResponse getMe(Long userId);
 
   UserResponse updateName(Long userId, UpdateUserRequest request);
+
+  void delete(Long userId);
 }
