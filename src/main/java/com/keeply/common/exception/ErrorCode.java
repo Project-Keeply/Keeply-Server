@@ -19,6 +19,8 @@ public enum ErrorCode {
 
   // User
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "존재하지 않는 유저입니다."),
+  OWNER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "USER_002", "점장은 그룹을 먼저 삭제한 후 회원 탈퇴할 수 있습니다."),
+  WITHDRAWN_USER(HttpStatus.UNAUTHORIZED, "USER_003", "탈퇴한 사용자입니다."),
 
   // Group
   USER_ALREADY_IN_GROUP(HttpStatus.CONFLICT, "GROUP_001", "이미 그룹에 소속된 유저입니다."),
