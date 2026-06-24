@@ -7,6 +7,7 @@ import com.keeply.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,5 +32,11 @@ public class UserController {
       @AuthenticationPrincipal Long userId, @RequestBody @Valid UpdateUserRequest request) {
     UserResponse response = userService.updateName(userId, request);
     return ApiResponse.success(response);
+  }
+
+  @DeleteMapping("/me")
+  public ApiResponse<Void> delete(@AuthenticationPrincipal Long userId) {
+    userService.delete(userId);
+    return ApiResponse.success(null);
   }
 }
