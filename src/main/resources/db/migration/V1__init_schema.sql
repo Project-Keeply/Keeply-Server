@@ -40,7 +40,9 @@ CREATE TABLE `groups` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- group_members
--- user_id 단독 UNIQUE: 한 유저는 한 그룹에만 소속
+-- deleted_flag: 소프트 삭제 상태 파생 컬럼 (활성=0, 삭제=NULL)
+-- (user_id, deleted_flag) 합성 UNIQUE: 활성 멤버는 user_id당 1행만 허용, 삭제 이력은 무제한 누적 가능
+--   → MySQL UNIQUE가 NULL 중복을 허용하는 성질 활용
 -- (group_id, user_id) 복합 UNIQUE: notices/work_logs/expiry_items의 복합 FK 참조 대상
 CREATE TABLE group_members (
   id BIGINT NOT NULL AUTO_INCREMENT,
@@ -49,8 +51,9 @@ CREATE TABLE group_members (
   role VARCHAR(255) NOT NULL,
   joined_at DATETIME(6) NOT NULL,
   deleted_at DATETIME(6),
+  deleted_flag TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 0, NULL)) VIRTUAL,
   PRIMARY KEY (id),
-  CONSTRAINT uq_group_members_user_id UNIQUE (user_id),
+  CONSTRAINT uq_group_members_user_id_active UNIQUE (user_id, deleted_flag),
   CONSTRAINT uq_group_members_group_user UNIQUE (group_id, user_id),
   CONSTRAINT fk_group_members_group FOREIGN KEY (group_id) REFERENCES `groups` (id),
   CONSTRAINT fk_group_members_user FOREIGN KEY (user_id) REFERENCES users (id)

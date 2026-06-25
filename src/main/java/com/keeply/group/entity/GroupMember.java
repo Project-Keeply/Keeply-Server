@@ -26,7 +26,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Getter
 @Entity
-@Table(name = "group_members", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id"}))
+@Table(
+    name = "group_members",
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uq_group_members_user_id_active",
+          columnNames = {"user_id", "deleted_flag"}),
+      @UniqueConstraint(
+          name = "uq_group_members_group_user",
+          columnNames = {"group_id", "user_id"})
+    })
 @EntityListeners(AuditingEntityListener.class)
 @SQLRestriction("deleted_at IS NULL")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -55,6 +64,14 @@ public class GroupMember {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  // 활성 멤버 1행 보장을 위한 파생 컬럼 (DB가 자동 계산, 애플리케이션에서 참조 X)
+  @Column(
+      name = "deleted_flag",
+      insertable = false,
+      updatable = false,
+      columnDefinition = "TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 0, NULL)) VIRTUAL")
+  private Byte deletedFlag;
 
   public void markDeleted() {
     this.deletedAt = LocalDateTime.now();
