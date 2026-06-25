@@ -1,5 +1,6 @@
 package com.keeply.auth.jwt;
 
+import com.keeply.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtProvider jwtProvider;
+  private final UserRepository userRepository;
 
   @Override
   protected void doFilterInternal(
@@ -30,9 +32,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     if (token != null && jwtProvider.validateToken(token) && jwtProvider.isAccessToken(token)) {
       Long userId = jwtProvider.getUserIdFromToken(token);
-      UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(userId, null, List.of());
-      SecurityContextHolder.getContext().setAuthentication(authentication);
+      if (userRepository.existsByIdAndDeletedAtIsNull(userId)) {
+        UsernamePasswordAuthenticationToken authentication =
+            new UsernamePasswordAuthenticationToken(userId, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+      }
     }
 
     filterChain.doFilter(request, response);

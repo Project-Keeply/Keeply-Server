@@ -37,6 +37,14 @@ public class AuthAccountService {
     User user =
         userRepository
             .findByKakaoId(kakaoId)
+            .map(
+                existing -> {
+                  if (existing.isDeleted()) {
+                    existing.restore();
+                  }
+                  existing.syncFromKakao(nickname, userInfo.getProfileImageUrl());
+                  return existing;
+                })
             .orElseGet(
                 () -> {
                   User newUser =
