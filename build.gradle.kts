@@ -24,6 +24,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
+	implementation(platform("software.amazon.awssdk:bom:2.28.16"))
+	implementation("software.amazon.awssdk:s3")
 	compileOnly("org.projectlombok:lombok")
 	runtimeOnly("com.mysql:mysql-connector-j")
 	implementation("org.flywaydb:flyway-core")
