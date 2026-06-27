@@ -29,7 +29,14 @@ public enum ErrorCode {
   GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "GROUP_005", "존재하지 않는 그룹입니다."),
   NOT_GROUP_OWNER(HttpStatus.FORBIDDEN, "GROUP_006", "그룹 점장만 가능한 작업입니다."),
   OWNER_CANNOT_LEAVE(HttpStatus.BAD_REQUEST, "GROUP_007", "점장은 그룹을 탈퇴할 수 없습니다. 그룹 삭제만 가능합니다."),
-  NOT_GROUP_MEMBER(HttpStatus.FORBIDDEN, "GROUP_008", "해당 그룹의 멤버가 아닙니다.");
+  NOT_GROUP_MEMBER(HttpStatus.FORBIDDEN, "GROUP_008", "해당 그룹의 멤버가 아닙니다."),
+
+  // File
+  FILE_INVALID_MIME(HttpStatus.BAD_REQUEST, "FILE_001", "허용되지 않는 이미지 형식입니다."),
+  FILE_INVALID_DOMAIN(HttpStatus.BAD_REQUEST, "FILE_002", "유효하지 않은 파일 도메인입니다."),
+  FILE_PRESIGN_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_003", "Presigned URL 생성에 실패했습니다."),
+  FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE_004", "업로드된 파일을 찾을 수 없습니다."),
+  FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_005", "파일 크기가 허용 범위를 초과했습니다.");
 
   @NonNull private final HttpStatus httpStatus;
   private final String code;

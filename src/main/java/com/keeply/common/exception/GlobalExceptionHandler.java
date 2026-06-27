@@ -1,16 +1,20 @@
 package com.keeply.common.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.keeply.common.response.ApiResponse;
+import com.keeply.file.domain.FileDomain;
 import io.jsonwebtoken.JwtException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
@@ -45,6 +49,33 @@ public class GlobalExceptionHandler {
             .orElse(ErrorCode.INVALID_INPUT.getMessage());
     return ResponseEntity.status(ErrorCode.INVALID_INPUT.getHttpStatus())
         .body(ApiResponse.failure(message));
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatchException(
+      MethodArgumentTypeMismatchException e) {
+    ErrorCode errorCode =
+        FileDomain.class.equals(e.getRequiredType())
+            ? ErrorCode.FILE_INVALID_DOMAIN
+            : ErrorCode.INVALID_INPUT;
+    return ResponseEntity.status(errorCode.getHttpStatus())
+        .body(ApiResponse.failure(errorCode.getMessage()));
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(
+      HttpMessageNotReadableException e) {
+    ErrorCode errorCode = resolveHttpMessageErrorCode(e);
+    return ResponseEntity.status(errorCode.getHttpStatus())
+        .body(ApiResponse.failure(errorCode.getMessage()));
+  }
+
+  private ErrorCode resolveHttpMessageErrorCode(HttpMessageNotReadableException e) {
+    if (e.getCause() instanceof InvalidFormatException ife
+        && FileDomain.class.equals(ife.getTargetType())) {
+      return ErrorCode.FILE_INVALID_DOMAIN;
+    }
+    return ErrorCode.INVALID_INPUT;
   }
 
   @ExceptionHandler({JwtException.class, NumberFormatException.class})
