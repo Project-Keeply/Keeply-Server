@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -100,16 +101,22 @@ class FileServiceImplTest {
           .isEqualTo(ErrorCode.FILE_INVALID_MIME);
     }
 
-    @Test
-    @DisplayName("확장자가 없으면 FILE_INVALID_MIME 예외를 던진다")
-    void throwsWhenFileNameHasNoExtension() {
-      PresignedUploadUrlRequest request =
-          uploadRequest("noextension", "image/jpeg", FileDomain.NOTICE);
+    @ParameterizedTest(name = "contentType={0} → 확장자={1}")
+    @CsvSource({"image/jpeg, jpg", "image/png, png", "image/webp, webp"})
+    @DisplayName("fileKey 확장자는 fileName이 아닌 contentType에서 도출된다")
+    void derivesExtensionFromContentType(String contentType, String expectedExtension)
+        throws Exception {
+      PresignedPutObjectRequest fake = fakePutPresigned();
+      given(s3Properties.getBucket()).willReturn(BUCKET);
+      given(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class))).willReturn(fake);
 
-      assertThatThrownBy(() -> fileService.createUploadUrl(request))
-          .isInstanceOf(CustomException.class)
-          .extracting("errorCode")
-          .isEqualTo(ErrorCode.FILE_INVALID_MIME);
+      // fileName에는 일부러 확장자를 다르게 또는 비워서 신뢰하지 않음을 검증
+      PresignedUploadUrlRequest request =
+          uploadRequest("untrusted.exe", contentType, FileDomain.NOTICE);
+
+      PresignedUploadUrlResponse response = fileService.createUploadUrl(request);
+
+      assertThat(response.getFileKey()).endsWith("." + expectedExtension);
     }
 
     @ParameterizedTest

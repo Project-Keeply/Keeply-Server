@@ -47,7 +47,7 @@ public class FileServiceImpl implements FileService {
       throw new CustomException(ErrorCode.FILE_INVALID_MIME);
     }
 
-    String fileKey = generateFileKey(request.getDomain(), request.getFileName());
+    String fileKey = generateFileKey(request.getDomain(), contentType);
 
     PutObjectRequest putObjectRequest =
         PutObjectRequest.builder()
@@ -127,20 +127,21 @@ public class FileServiceImpl implements FileService {
         DeleteObjectRequest.builder().bucket(s3Properties.getBucket()).key(fileKey).build());
   }
 
-  private String generateFileKey(FileDomain domain, String fileName) {
+  private String generateFileKey(FileDomain domain, String contentType) {
     LocalDate today = LocalDate.now();
-    String extension = extractExtension(fileName);
+    String extension = mapContentTypeToExtension(contentType);
     String uuid = UUID.randomUUID().toString();
     return String.format(
         "%s/%d/%02d/%s.%s",
         domain.getPath(), today.getYear(), today.getMonthValue(), uuid, extension);
   }
 
-  private String extractExtension(String fileName) {
-    int dotIndex = fileName.lastIndexOf('.');
-    if (dotIndex < 0 || dotIndex == fileName.length() - 1) {
-      throw new CustomException(ErrorCode.FILE_INVALID_MIME);
-    }
-    return fileName.substring(dotIndex + 1).toLowerCase();
+  private String mapContentTypeToExtension(String contentType) {
+    return switch (contentType) {
+      case "image/jpeg" -> "jpg";
+      case "image/png" -> "png";
+      case "image/webp" -> "webp";
+      default -> throw new CustomException(ErrorCode.FILE_INVALID_MIME);
+    };
   }
 }
