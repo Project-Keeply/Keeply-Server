@@ -44,3 +44,9 @@ Thumbs.db
 
 ### Local working notes ###
 .hoyeon/
+
+### Branch review artifacts ###
+.tmp/
+
+### Claude Code (local per-user settings) ###
+.claude/settings.local.json
