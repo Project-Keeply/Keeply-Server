@@ -165,7 +165,8 @@ git diff ${BASE_BRANCH}...HEAD --name-only | wc -l
 - **Screenshot:** 서버 프로젝트 특성상 UI 스크린샷이 필요한 경우는 드묾. Swagger UI 캡처나 Postman 응답 캡처가 있으면 유지, 없으면 섹션 삭제.
 - **추론 불가 항목:** diff에서 확인하기 어려운 내용은 `[작성 필요]` 플레이스홀더 사용.
 
-아래 템플릿을 채워서 `/tmp/pr-body.md`에 저장한다.
+프로젝트 로컬 임시 디렉토리(`.tmp/`, gitignored)에 저장한다. 없으면 먼저 `mkdir -p .tmp`.
+아래 템플릿을 채워서 `.tmp/pr-body.md`에 저장한다.
 
 ```markdown
 ## Summary
@@ -231,7 +232,7 @@ gh pr create \
   --base ${BASE_BRANCH} \
   --head ${CURRENT_BRANCH} \
   --title "${PR_TITLE}" \
-  --body-file /tmp/pr-body.md
+  --body-file .tmp/pr-body.md
 ```
 
 ### 9.2 PR이 이미 있는 경우
@@ -244,7 +245,7 @@ gh pr create \
      ```bash
      gh pr edit ${EXISTING_PR_NUMBER} \
        --title "${PR_TITLE}" \
-       --body-file /tmp/pr-body.md
+       --body-file .tmp/pr-body.md
      ```
    - **아니오(본문 유지):** `gh pr edit`을 호출하지 않는다.
 

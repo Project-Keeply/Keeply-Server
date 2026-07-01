@@ -81,7 +81,8 @@ git rev-parse --abbrev-ref HEAD
 
 ## Step 4: 이슈 본문 생성
 
-아래 템플릿을 채워서 `/tmp/issue-body.md`에 저장한다.
+프로젝트 로컬 임시 디렉토리(`.tmp/`, gitignored)에 저장한다. 없으면 먼저 `mkdir -p .tmp`.
+아래 템플릿을 채워서 `.tmp/issue-body.md`에 저장한다.
 
 ```markdown
 ## Tasks (To-Do)
@@ -126,7 +127,7 @@ git rev-parse --abbrev-ref HEAD
 ```bash
 gh issue create \
   --title "{최종 ISSUE_TITLE}" \
-  --body-file /tmp/issue-body.md
+  --body-file .tmp/issue-body.md
 ```
 
 - 성공 시: " 이슈 생성됨: {URL}" 출력

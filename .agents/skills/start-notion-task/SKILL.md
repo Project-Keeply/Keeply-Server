@@ -69,7 +69,8 @@ git status --porcelain
 ## Step 4: GitHub Issue 생성
 
 ### 4.1 이슈 본문 조립
-아래 템플릿을 `/tmp/notion-task-issue-body.md`에 저장:
+프로젝트 로컬 임시 디렉토리(`.tmp/`, gitignored)에 저장. 없으면 먼저 `mkdir -p .tmp`.
+아래 템플릿을 `.tmp/notion-task-issue-body.md`에 저장:
 
 ```markdown
 ## Related Notion Task
@@ -91,7 +92,7 @@ git status --porcelain
 
 ### 4.3 이슈 생성
 ```bash
-gh issue create --title "{TITLE}" --body-file /tmp/notion-task-issue-body.md
+gh issue create --title "{TITLE}" --body-file .tmp/notion-task-issue-body.md
 ```
 - 응답 URL에서 `ISSUE_NUMBER`, `ISSUE_URL` 추출
 
