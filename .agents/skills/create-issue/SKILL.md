@@ -19,7 +19,7 @@ gh --version
   "GitHub CLI(gh)가 설치되어 있지 않습니다.
    아래 명령어로 설치해주세요:
 
-   Mac:   brew install gh
+   Mac: brew install gh
    Windows: winget install GitHub.cli
 
    설치 직후에는 PATH가 반영되도록 터미널을 닫았다가 다시 열거나, 새 터미널 세션에서 진행해주세요.
@@ -84,13 +84,13 @@ git rev-parse --abbrev-ref HEAD
 아래 템플릿을 채워서 `/tmp/issue-body.md`에 저장한다.
 
 ```markdown
-## ✅ Tasks (To-Do)
+## Tasks (To-Do)
 {TASKS 항목들 — 체크박스 형식}
 
-## 📝 Description
+## Description
 {DESCRIPTION}
 
-## 📎 ETC
+## ETC
 {ETC}
 ```
 
@@ -105,7 +105,7 @@ git rev-parse --abbrev-ref HEAD
 
 ```
 ---
-📋 이슈 프리뷰
+이슈 프리뷰
 
 제목: {최종 ISSUE_TITLE}
 
@@ -129,7 +129,7 @@ gh issue create \
   --body-file /tmp/issue-body.md
 ```
 
-- 성공 시: "✅ 이슈 생성됨: {URL}" 출력
+- 성공 시: " 이슈 생성됨: {URL}" 출력
 - 실패 시: 에러 메시지 표시 후 수동 생성 안내
 
 ---

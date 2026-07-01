@@ -4,7 +4,7 @@
 
 ## 표준 템플릿
 
-    ✅ 작업 완료
+     작업 완료
 
     ### 컨텍스트
     - 브랜치: {브랜치명}
@@ -18,11 +18,11 @@
     - 총 {N}개 파일, +{X}/-{Y} lines
 
     ### 검증 결과
-    - Spotless: ✅ / ❌ / N/A
-    - Compile: ✅ / ❌ / N/A
-    - Test: ✅ / ❌ / N/A
-    - Build: ✅ / ❌ / N/A
-    - Swagger 확인: ✅ / ❌ / N/A
+    - Spotless: PASS / FAIL / N/A
+    - Compile: PASS / FAIL / N/A
+    - Test: PASS / FAIL / N/A
+    - Build: PASS / FAIL / N/A
+    - Swagger 확인: PASS / FAIL / N/A
 
     ### 커밋
     - {커밋 해시} {커밋 메시지}

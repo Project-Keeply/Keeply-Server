@@ -16,7 +16,7 @@ Available: `/branch-review`, `/create-issue`, `/create-pr`, `/logic-design`.
 Natural-language triggers auto-invoke skills via `description` frontmatter matching.
 Examples: "PR 올려줘" → `create-pr`, "리뷰해줘" → `branch-review`.
 
-## ⚠️ CRITICAL — Agent Usage Policy
+## CRITICAL — Agent Usage Policy
 
 > **You MUST NEVER spawn or invoke any agent without explicit user approval.**
 >

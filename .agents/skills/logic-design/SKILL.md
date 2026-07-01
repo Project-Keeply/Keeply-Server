@@ -37,7 +37,7 @@ git diff develop...HEAD --name-status
 파악한 내용을 아래 형식으로 사용자에게 보여준다.
 
 ```
-📌 컨텍스트 파악 완료
+컨텍스트 파악 완료
 
 브랜치: {CURRENT_BRANCH}
 이슈: #{ISSUE_NUMBER} — {이슈 제목}
@@ -54,7 +54,7 @@ git diff develop...HEAD --name-status
 
 ## Step 2: 구현 설계 인터뷰
 
-아래 항목들을 **자연스러운 대화 흐름**으로 질문한다.
+아래 항목들을 **자연스러운 대화 흐름** 으로 질문한다.
 한 번에 다 묻지 말고, 이전 답변을 바탕으로 필요한 항목만 골라서 질문한다.
 
 ### 질문 항목 (상황에 따라 선택)
@@ -102,41 +102,41 @@ git diff develop...HEAD --name-status
 
 ## Step 3: 구현 체크리스트 생성
 
-인터뷰 내용을 바탕으로 **카테고리별 구현 체크리스트**를 생성해 대화 내에 출력한다.
+인터뷰 내용을 바탕으로 **카테고리별 구현 체크리스트** 를 생성해 대화 내에 출력한다.
 
 ### 출력 형식
 
 ```
-## 🗂️ 구현 체크리스트 — {브랜치명}
+## 구현 체크리스트 — {브랜치명}
 
-### 📁 파일 구조
+### 파일 구조
 - [ ] {생성/수정할 파일 경로 및 역할}
 
-### 🎯 Controller
+### Controller
 - [ ] {메서드명} — {HTTP method / URI / 요청·응답 요약}
 
-### ⚙️ Service
+### Service
 - [ ] {인터페이스 / Impl} — {비즈니스 로직 요약, 트랜잭션 경계}
 
-### 🗄️ Repository / DB
+### Repository / DB
 - [ ] {쿼리 메서드 / Entity 스키마 변경 / Flyway 마이그레이션}
 
-### 📦 Entity / DTO
+### Entity / DTO
 - [ ] {Entity 필드 / DTO 필드 및 매핑 방식}
 
-### 🔐 Security / 인증
+### Security / 인증
 - [ ] {인증·인가 정책 / SecurityConfig 수정}
 
-### 🚨 예외 처리
+### 예외 처리
 - [ ] {Custom Exception / 에러 코드 / GlobalExceptionHandler 반영}
 
-### ✅ Validation
+### Validation
 - [ ] {검증 항목 및 처리 위치}
 
-### 📖 Swagger
+### Swagger
 - [ ] {문서화 어노테이션 추가 대상}
 
-### ⚠️ 고려사항
+### 고려사항
 - [ ] {N+1, 트랜잭션, 성능, 외부 연동 등}
 ```
 

@@ -72,16 +72,16 @@ git status --porcelain
 아래 템플릿을 `/tmp/notion-task-issue-body.md`에 저장:
 
 ```markdown
-## 🔗 Related Notion Task
+## Related Notion Task
 {NOTION_URL}
 
-## ✅ Tasks (To-Do)
+## Tasks (To-Do)
 - [ ] {TITLE 기반 작업 항목}
 
-## 📝 Description
+## Description
 {Notion 페이지 설명 요약, 없으면 "-"}
 
-## 📎 ETC
+## ETC
 -
 ```
 
@@ -133,9 +133,9 @@ Notion 태스크 시작 완료
 - 브랜치: {BRANCH_NAME} (체크아웃 완료)
 
 ### Notion 업데이트
-- 상태: {기존 상태} → 진행 중 
-- GitHub Issue URL 채움 
-- Branch 채움 
+- 상태: {기존 상태} → 진행 중
+- GitHub Issue URL 채움
+- Branch 채움
 
 ### 검증 결과
 - Spotless: N/A / Compile: N/A / Test: N/A / Build: N/A
