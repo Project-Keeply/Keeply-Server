@@ -7,8 +7,9 @@
 - `./gradlew spotlessCheck` 통과 (포맷 검사)
   - 실패 시 `./gradlew spotlessApply`로 자동 포맷 후 재검증
 - `./gradlew compileJava` 통과 (컴파일 검증)
-- `./gradlew test` 통과
 - `./gradlew build` 성공
+  - Gradle `build`는 `check`(→ `test`)를 포함하므로 별도 `./gradlew test`는 실행하지 않는다
+  - 빠른 반복 시에는 `./gradlew test`만 단독으로 돌려도 됨
 - 실패 시 원인 파악 후 재시도 (에러 무시 금지)
 
 ## 2. 변경 범위 검증
