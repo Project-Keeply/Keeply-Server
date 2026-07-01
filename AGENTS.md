@@ -54,7 +54,7 @@ Every skill invocation follows this flight protocol:
 
 Typical feature development order (Notion-first hybrid):
 
-```
+```text
 1. Create Notion task    → (create manually in Notion "Task 관리" DB)
 2. Start Notion task     → start-notion-task
                            (auto: GitHub Issue + branch + Notion → "진행 중")
@@ -84,7 +84,7 @@ for PR linking. Steps 6+ Notion sync automation is planned but not yet implement
 
 ## Folder Structure (Summary)
 
-```
+```text
 keeply-server/
 ├── AGENTS.md                    ← this file (router)
 ├── CLAUDE.md                    ← Claude Code entry point (references this file)

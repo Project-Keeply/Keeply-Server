@@ -7,6 +7,8 @@ description: 사용자 인터뷰를 통해 이슈 내용을 채우고 gh CLI로 
 
 사용자 인터뷰를 통해 이슈 내용을 채우고, gh CLI로 GitHub 이슈를 생성한다.
 
+> 이 스킬은 표준 Flight Protocol의 **Flight** 단계입니다. 실행 전 [Preflight](../../checklists/preflight.md), 실행 후 [Postflight](../../checklists/postflight.md) → [Debrief](../../checklists/debrief.md)를 따르세요.
+
 ---
 
 ## Step 1: 전제 조건 확인
@@ -49,7 +51,10 @@ git rev-parse --abbrev-ref HEAD
 
 - 입력받은 값을 `ISSUE_TITLE`로 저장
 - 제목 앞에 `[Task] ` 프리픽스를 자동으로 붙인다 → `[Task] {ISSUE_TITLE}`
-- 단, 사용자가 이미 `[`로 시작하는 제목을 입력했으면 프리픽스를 붙이지 않는다
+- **예외**: 다음 프리픽스 집합 중 하나로 시작하면 자동 추가하지 않는다 (사용자가 의도적으로 지정한 것으로 간주)
+  - `[Task]`, `[Bug]`, `[Hotfix]`, `[Feat]`, `[Fix]`, `[Chore]`, `[Refactor]`, `[Docs]`, `[Test]`
+  - `Feat:`, `Fix:`, `Hotfix:`, `Chore:`, `Refactor:`, `Docs:`, `Test:` 등 콜론형 프리픽스
+- 위 집합에 없는 대괄호(예: `[Random]`)로 시작하면 확인: "이 제목을 그대로 쓸까요, `[Task]` 프리픽스를 붙일까요?"
 
 ---
 
