@@ -19,8 +19,10 @@ gh --version
   "GitHub CLI(gh)가 설치되어 있지 않습니다.
    아래 명령어로 설치해주세요:
 
-   Mac: brew install gh
-   Windows: winget install GitHub.cli
+   Mac:                    brew install gh
+   Windows:                winget install GitHub.cli
+   Linux (Debian/Ubuntu):  sudo apt install gh
+   Linux (Fedora/RHEL):    sudo dnf install gh
 
    설치 직후에는 PATH가 반영되도록 터미널을 닫았다가 다시 열거나, 새 터미널 세션에서 진행해주세요.
    이후 `gh auth login` 으로 GitHub 로그인을 해주세요."
@@ -54,14 +56,20 @@ git rev-parse --abbrev-ref HEAD
 - 추출 불가 시 `ISSUE_NUMBER=null`
 
 ### 2.3 베이스 브랜치 결정
+
+원격 브랜치 존재 여부를 명시적 우선순위로 확인한다 (`git branch -r`의 출력 순서에 의존하지 않는다).
+
 ```bash
-git branch -r | grep -E "origin/(develop|main|master)"
+# 우선순위: develop > main > master
+git show-ref --verify --quiet refs/remotes/origin/develop && BASE_BRANCH=develop \
+  || (git show-ref --verify --quiet refs/remotes/origin/main && BASE_BRANCH=main) \
+  || (git show-ref --verify --quiet refs/remotes/origin/master && BASE_BRANCH=master)
 ```
+
 - 피처 브랜치(`feat/*`, `fix/*`, `chore/*`, `refactor/*`, `docs/*` 등)인 경우:
-  - `develop` 존재하면 → `develop`
-  - 없으면 → `main`
-- `develop` 브랜치인 경우 → `main`
-- `BASE_BRANCH` 변수에 저장
+  - 위 우선순위 그대로 적용 (일반적으로 `develop`)
+- `develop` 브랜치에서 PR을 생성하는 경우 → `BASE_BRANCH=main`으로 강제
+- 최종 결정된 값을 `BASE_BRANCH` 변수에 저장
 
 ---
 
@@ -72,7 +80,8 @@ git branch -r | grep -E "origin/(develop|main|master)"
 
 "PR 제목을 입력해주세요. (예: `Feat: 카카오 OAuth 로그인 API 구현`)"
 
-- 입력받은 값을 `PR_TITLE`로 저장
+- 입력받은 값을 트리밍 후 `PR_TITLE`로 저장
+- **빈 값 검증**: 트리밍 결과가 비어 있으면 "PR 제목은 필수입니다. 다시 입력해주세요." 안내 후 재요청. 재시도 후에도 비어 있으면 스킬 중단 (`gh pr create --title ""` 실패 방지)
 - 형식이 `Type: 설명` 패턴이 아니면 한 번 확인:
   "`Feat: ...` 형식으로 작성하시겠어요, 아니면 그대로 사용할까요?"
 
@@ -96,8 +105,14 @@ git ls-remote --heads origin ${CURRENT_BRANCH}
 ```
 
 ### 4.2 푸시
-- 원격에 없으면: `git push -u origin ${CURRENT_BRANCH}`
-- 원격에 있으면: 로컬이 앞서있을 때만 `git push origin ${CURRENT_BRANCH}`
+- **원격에 없으면**: `git push -u origin ${CURRENT_BRANCH}`
+- **원격에 있으면**: 로컬 ahead 여부를 명시적으로 확인 후 푸시
+  ```bash
+  git fetch origin ${CURRENT_BRANCH}
+  LOCAL_AHEAD=$(git rev-list --count origin/${CURRENT_BRANCH}..HEAD)
+  ```
+  - `LOCAL_AHEAD > 0`이면 `git push origin ${CURRENT_BRANCH}` 실행
+  - `LOCAL_AHEAD == 0`이면 푸시 생략 (동일 상태), Step 5로 진행
 - 푸시 실패 시 중단 후 에러 메시지 표시
 
 ---
@@ -105,9 +120,10 @@ git ls-remote --heads origin ${CURRENT_BRANCH}
 ## Step 5: 기존 PR 확인
 
 ```bash
-gh pr list --head ${CURRENT_BRANCH} --json number,url,state
+gh pr list --head ${CURRENT_BRANCH} --state all --json number,url,state
 ```
-- PR 있으면 `EXISTING_PR_NUMBER`, `EXISTING_PR_URL` 저장
+- PR 있으면 `EXISTING_PR_NUMBER`, `EXISTING_PR_URL`, `EXISTING_PR_STATE` 저장
+  - `EXISTING_PR_STATE`가 `OPEN`이 아니면(`CLOSED` / `MERGED`) Step 9에서 새 PR 생성으로 분기
 - PR 없으면 `EXISTING_PR_NUMBER=null`
 
 ---
@@ -237,7 +253,14 @@ gh pr create \
 
 ### 9.2 PR이 이미 있는 경우
 
-본문 덮어쓰기 전에 사용자에게 확인한다.
+먼저 PR 상태에 따라 분기한다.
+
+- **`EXISTING_PR_STATE`가 `OPEN`이 아닌 경우** (`CLOSED` / `MERGED`):
+  - 사용자에게 안내: "브랜치 `{CURRENT_BRANCH}`의 기존 PR #{EXISTING_PR_NUMBER}는 이미 {상태}입니다. 새 PR을 생성할까요?"
+  - 승인 시 Step 9.1의 `gh pr create` 실행
+  - 거부 시 스킬 종료
+
+- **`EXISTING_PR_STATE == OPEN`인 경우**: 본문 덮어쓰기 전에 사용자에게 확인한다.
 
 1. `gh pr view ${EXISTING_PR_NUMBER} --json body`로 기존 본문 확인. 비어 있으면 확인 생략.
 2. **사용자에게 질문:** "기존 PR 본문을 이번에 생성한 내용으로 **전부 교체** 할까요?"
