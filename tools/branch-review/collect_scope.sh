@@ -22,9 +22,9 @@ RANGE="${MERGE_BASE}..HEAD"
 
 mkdir -p "$OUT_DIR"
 
-git diff --name-status "$RANGE" >"$OUT_DIR/files.txt"
-git diff --unified=3 "$RANGE" >"$OUT_DIR/diff.patch"
-git log --oneline "$RANGE" >"$OUT_DIR/commits.txt"
+git --no-pager diff --name-status "$RANGE" >"$OUT_DIR/files.txt"
+git --no-pager diff --unified=3 "$RANGE" >"$OUT_DIR/diff.patch"
+git --no-pager log --oneline "$RANGE" >"$OUT_DIR/commits.txt"
 
 cat >"$OUT_DIR/summary.md" <<EOF
 [SKILL ACTIVE] branch-review
