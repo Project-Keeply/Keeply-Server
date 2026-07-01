@@ -44,3 +44,6 @@ Thumbs.db
 
 ### Local working notes ###
 .hoyeon/
+
+### Branch review artifacts ###
+.tmp/

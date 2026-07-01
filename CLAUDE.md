@@ -1,38 +1,20 @@
-# Keeply Server Guide
+# CLAUDE.md
 
-  ## Project Summary
-  - One-line definition: Keeply is a mobile-first web service that helps
-  convenience store workers manage announcements, operation logs, and
-  expiration-date tracking in one place without handwritten notebooks.
-  - Problems to solve:
-    - Information loss during shift handovers
-    - Duplicate work caused by fragmented tools for announcements, memos, and
-  expiration tracking
-    - Manual dependency in managing near-expiry items
-  - Core values:
-    - Clarity in information delivery
-    - Action-oriented UX for on-site operations
-    - Fast input flow like handwritten notes + digital traceability/searchability
-  - Target users: Convenience store owners/managers, weekday workers, night-shift
-  workers, and weekend workers
+> Claude Code entry point. All project rules, skill routing, and workflow live in AGENTS.md.
 
-  ## Tech Stack
-  - Language: Java 21
-  - Framework: Spring Boot 3.5.0
-  - Build Tool: Gradle (Kotlin DSL)
-  - Database: MySQL 8.0 (Docker)
-  - ORM: Spring Data JPA / Hibernate
-  - Security: Spring Security + Kakao OAuth2 + JWT (Access/Refresh Token)
-  - Validation: Spring Validation (Bean Validation)
-  - Documentation: SpringDoc OpenAPI (Swagger)
+@AGENTS.md
 
-  ## Coding Convention
-  - Follow the coding convention in `docs/rules/coding-convention.md`
-  - @docs/rules/coding-convention.md
+## Claude Code Specific
 
-  ## Git Convention
-  - Follow the Git convention (commit & PR) in `docs/rules/git-convention.md`
-  - @docs/rules/git-convention.md
+### Slash Commands
+
+`.claude/commands/*.md` are symlinks to `.agents/skills/*/SKILL.md`.
+Available: `/branch-review`, `/create-issue`, `/create-pr`, `/logic-design`.
+
+### Skill Auto-Matching
+
+Natural-language triggers auto-invoke skills via `description` frontmatter matching.
+Examples: "PR 올려줘" → `create-pr`, "리뷰해줘" → `branch-review`.
 
 ## ⚠️ CRITICAL — Agent Usage Policy
 
