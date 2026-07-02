@@ -2,6 +2,7 @@ package com.keeply.notice.service;
 
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
+import com.keeply.common.response.PageResponse;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
 import com.keeply.group.repository.GroupMemberRepository;
@@ -43,12 +44,13 @@ public class NoticeServiceImpl implements NoticeService {
 
   @Override
   @Transactional(readOnly = true)
-  public Page<NoticeListResponse> getNoticeList(Long groupId, NoticeTag tag, Pageable pageable) {
+  public PageResponse<NoticeListResponse> getNoticeList(
+      Long groupId, NoticeTag tag, Pageable pageable) {
     Page<Notice> notices =
         tag == null
             ? noticeRepository.findByGroup_Id(groupId, pageable)
             : noticeRepository.findByGroup_IdAndTag(groupId, tag, pageable);
-    return notices.map(NoticeListResponse::of);
+    return PageResponse.of(notices.map(NoticeListResponse::of));
   }
 
   @Override

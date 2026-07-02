@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
+import com.keeply.common.response.PageResponse;
 import com.keeply.group.entity.Group;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
@@ -31,7 +32,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -93,10 +93,16 @@ class NoticeServiceImplTest {
       given(noticeRepository.findByGroup_Id(GROUP_ID, pageable))
           .willReturn(new PageImpl<>(java.util.List.of(notice), pageable, 1));
 
-      Page<NoticeListResponse> response = noticeService.getNoticeList(GROUP_ID, null, pageable);
+      PageResponse<NoticeListResponse> response =
+          noticeService.getNoticeList(GROUP_ID, null, pageable);
 
       assertThat(response.getContent()).hasSize(1);
       assertThat(response.getContent().get(0).getNoticeId()).isEqualTo(NOTICE_ID);
+      assertThat(response.getPage()).isZero();
+      assertThat(response.getSize()).isEqualTo(10);
+      assertThat(response.getTotalElements()).isEqualTo(1);
+      assertThat(response.getTotalPages()).isEqualTo(1);
+      assertThat(response.isHasNext()).isFalse();
       verify(noticeRepository).findByGroup_Id(GROUP_ID, pageable);
       verify(noticeRepository, never()).findByGroup_IdAndTag(any(), any(), any());
     }
@@ -109,7 +115,7 @@ class NoticeServiceImplTest {
       given(noticeRepository.findByGroup_IdAndTag(GROUP_ID, NoticeTag.WEEKLY, pageable))
           .willReturn(new PageImpl<>(java.util.List.of(notice), pageable, 1));
 
-      Page<NoticeListResponse> response =
+      PageResponse<NoticeListResponse> response =
           noticeService.getNoticeList(GROUP_ID, NoticeTag.WEEKLY, pageable);
 
       assertThat(response.getContent()).hasSize(1);

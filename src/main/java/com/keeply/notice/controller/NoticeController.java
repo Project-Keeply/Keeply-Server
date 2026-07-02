@@ -1,6 +1,7 @@
 package com.keeply.notice.controller;
 
 import com.keeply.common.response.ApiResponse;
+import com.keeply.common.response.PageResponse;
 import com.keeply.common.security.annotation.GroupMemberOnly;
 import com.keeply.notice.dto.request.CreateNoticeRequest;
 import com.keeply.notice.dto.request.UpdateNoticeRequest;
@@ -12,7 +13,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -49,12 +49,12 @@ public class NoticeController {
   @GroupMemberOnly
   @GetMapping
   @Operation(summary = "공지 목록 조회")
-  public ApiResponse<Page<NoticeListResponse>> getNoticeList(
+  public ApiResponse<PageResponse<NoticeListResponse>> getNoticeList(
       @AuthenticationPrincipal Long userId,
       @PathVariable Long groupId,
       @RequestParam(required = false) NoticeTag tag,
       @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-    Page<NoticeListResponse> response = noticeService.getNoticeList(groupId, tag, pageable);
+    PageResponse<NoticeListResponse> response = noticeService.getNoticeList(groupId, tag, pageable);
     return ApiResponse.success(response);
   }
 
