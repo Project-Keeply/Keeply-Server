@@ -43,3 +43,9 @@
   ## Types
   - Always use DTOs for data transfer between layers (never expose Entity directly)
   - Define Service as interface, then provide implementation class
+
+  ## REST Path Variables
+  - 그룹 종속 리소스 경로의 path variable은 반드시 `groupId`로 통일
+    - 예: `/groups/{groupId}/notices`, `/groups/{groupId}/work-logs`, `/groups/{groupId}/expiry-items`
+  - `GroupAccessAspect`(`@GroupMemberOnly` / `@GroupOwnerOnly`)가 이름 기준으로 파라미터를 스캔하므로 다른 이름(`targetGroupId` 등) 사용 금지
+  - 컨트롤러 파라미터는 `@PathVariable Long groupId` (value 생략) 또는 `@PathVariable("groupId") Long groupId` 형태 허용
