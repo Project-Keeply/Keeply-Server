@@ -21,10 +21,6 @@ public class GroupMemberServiceImpl implements GroupMemberService {
   @Override
   @Transactional(readOnly = true)
   public List<GroupMemberResponse> getList(Long userId, Long groupId) {
-    if (!groupMemberRepository.existsByGroupIdAndUserId(groupId, userId)) {
-      throw new CustomException(ErrorCode.NOT_GROUP_MEMBER);
-    }
-
     return groupMemberRepository.findByGroupIdWithUser(groupId).stream()
         .sorted(
             Comparator.comparing((GroupMember m) -> m.getRole() != GroupRole.OWNER)
