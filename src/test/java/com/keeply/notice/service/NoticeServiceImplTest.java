@@ -201,6 +201,18 @@ class NoticeServiceImplTest {
     }
 
     @Test
+    @DisplayName("removeImage가 false만 전달되면 INVALID_INPUT 예외를 던진다")
+    void throwsWhenOnlyRemoveImageFalse() {
+      UpdateNoticeRequest request = updateRequest(null, null, null, null, false);
+
+      assertThatThrownBy(() -> noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request))
+          .isInstanceOf(CustomException.class)
+          .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
+
+      verify(noticeRepository, never()).findByIdAndGroup_Id(any(), any());
+    }
+
+    @Test
     @DisplayName("제목 또는 내용이 blank이면 INVALID_INPUT 예외를 던진다")
     void throwsWhenBlankFieldExists() {
       UpdateNoticeRequest request = updateRequest(" ", null, null, null, null);

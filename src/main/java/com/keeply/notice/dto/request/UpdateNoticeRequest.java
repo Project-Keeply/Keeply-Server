@@ -29,7 +29,7 @@ public class UpdateNoticeRequest {
         || content != null
         || tag != null
         || imageUrl != null
-        || removeImage != null;
+        || Boolean.TRUE.equals(removeImage);
   }
 
   public boolean hasBlankField() {
