@@ -17,12 +17,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 
+@ExtendWith(MockitoExtension.class)
 class GroupAccessAspectTest {
 
   private static final Long USER_ID = 1L;
@@ -36,7 +38,6 @@ class GroupAccessAspectTest {
 
   @BeforeEach
   void setUp() {
-    MockitoAnnotations.openMocks(this);
     aspect = new GroupAccessAspect(groupMemberRepository);
   }
 
