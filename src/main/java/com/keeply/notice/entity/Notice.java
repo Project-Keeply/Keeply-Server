@@ -57,7 +57,8 @@ public class Notice extends BaseTimeEntity {
   @Column(name = "image_url")
   private String imageUrl;
 
-  public void updateInfo(String title, String content, NoticeTag tag, String imageUrl) {
+  public void updateInfo(
+      String title, String content, NoticeTag tag, String imageUrl, boolean isRemoveImage) {
     if (title != null && !title.isBlank()) {
       this.title = title;
     }
@@ -67,7 +68,9 @@ public class Notice extends BaseTimeEntity {
     if (tag != null) {
       this.tag = tag;
     }
-    if (imageUrl != null) {
+    if (isRemoveImage) {
+      this.imageUrl = null;
+    } else if (imageUrl != null) {
       this.imageUrl = imageUrl;
     }
   }

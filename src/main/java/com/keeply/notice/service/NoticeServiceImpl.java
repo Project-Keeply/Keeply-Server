@@ -64,7 +64,7 @@ public class NoticeServiceImpl implements NoticeService {
   @Transactional
   public NoticeResponse updateNotice(
       Long userId, Long groupId, Long noticeId, UpdateNoticeRequest request) {
-    if (!request.hasUpdateField() || request.hasBlankField()) {
+    if (!request.hasUpdateField() || request.hasBlankField() || request.hasImageConflict()) {
       throw new CustomException(ErrorCode.INVALID_INPUT);
     }
     Notice notice = getNoticeByIdAndGroupId(noticeId, groupId);
@@ -72,7 +72,11 @@ public class NoticeServiceImpl implements NoticeService {
       throw new CustomException(ErrorCode.NOT_NOTICE_AUTHOR);
     }
     notice.updateInfo(
-        request.getTitle(), request.getContent(), request.getTag(), request.getImageUrl());
+        request.getTitle(),
+        request.getContent(),
+        request.getTag(),
+        request.getImageUrl(),
+        request.isRemoveImage());
     return NoticeResponse.of(notice);
   }
 

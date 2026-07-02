@@ -162,7 +162,7 @@ class NoticeServiceImplTest {
     void updatesNoticeWhenAuthor() {
       Notice notice = notice(NOTICE_ID, USER_ID, "작성자", GroupRole.STAFF, NoticeTag.DAILY);
       UpdateNoticeRequest request =
-          updateRequest("수정 제목", "수정 내용", NoticeTag.WEEKLY, "https://example.com/image.png");
+          updateRequest("수정 제목", "수정 내용", NoticeTag.WEEKLY, "https://example.com/image.png", null);
       given(noticeRepository.findByIdAndGroup_Id(NOTICE_ID, GROUP_ID))
           .willReturn(Optional.of(notice));
 
@@ -178,7 +178,7 @@ class NoticeServiceImplTest {
     @DisplayName("작성자가 아니면 NOT_NOTICE_AUTHOR 예외를 던진다")
     void throwsWhenNotAuthor() {
       Notice notice = notice(NOTICE_ID, USER_ID, "작성자", GroupRole.STAFF, NoticeTag.DAILY);
-      UpdateNoticeRequest request = updateRequest("수정 제목", null, null, null);
+      UpdateNoticeRequest request = updateRequest("수정 제목", null, null, null, null);
       given(noticeRepository.findByIdAndGroup_Id(NOTICE_ID, GROUP_ID))
           .willReturn(Optional.of(notice));
 
@@ -191,7 +191,7 @@ class NoticeServiceImplTest {
     @Test
     @DisplayName("수정 필드가 없으면 INVALID_INPUT 예외를 던진다")
     void throwsWhenNoUpdateField() {
-      UpdateNoticeRequest request = updateRequest(null, null, null, null);
+      UpdateNoticeRequest request = updateRequest(null, null, null, null, null);
 
       assertThatThrownBy(() -> noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request))
           .isInstanceOf(CustomException.class)
@@ -203,7 +203,40 @@ class NoticeServiceImplTest {
     @Test
     @DisplayName("제목 또는 내용이 blank이면 INVALID_INPUT 예외를 던진다")
     void throwsWhenBlankFieldExists() {
-      UpdateNoticeRequest request = updateRequest(" ", null, null, null);
+      UpdateNoticeRequest request = updateRequest(" ", null, null, null, null);
+
+      assertThatThrownBy(() -> noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request))
+          .isInstanceOf(CustomException.class)
+          .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
+
+      verify(noticeRepository, never()).findByIdAndGroup_Id(any(), any());
+    }
+
+    @Test
+    @DisplayName("removeImage가 true이면 기존 이미지를 제거한다")
+    void removesImageWhenRemoveImageIsTrue() {
+      Notice notice =
+          notice(
+              NOTICE_ID,
+              USER_ID,
+              "작성자",
+              GroupRole.STAFF,
+              NoticeTag.DAILY,
+              "https://example.com/image.png");
+      UpdateNoticeRequest request = updateRequest(null, null, null, null, true);
+      given(noticeRepository.findByIdAndGroup_Id(NOTICE_ID, GROUP_ID))
+          .willReturn(Optional.of(notice));
+
+      NoticeResponse response = noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request);
+
+      assertThat(response.getImageUrl()).isNull();
+    }
+
+    @Test
+    @DisplayName("imageUrl과 removeImage=true가 동시에 전달되면 INVALID_INPUT 예외를 던진다")
+    void throwsWhenImageUrlAndRemoveImageConflict() {
+      UpdateNoticeRequest request =
+          updateRequest(null, null, null, "https://example.com/image.png", true);
 
       assertThatThrownBy(() -> noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request))
           .isInstanceOf(CustomException.class)
@@ -303,24 +336,35 @@ class NoticeServiceImplTest {
   }
 
   private static UpdateNoticeRequest updateRequest(
-      String title, String content, NoticeTag tag, String imageUrl) {
+      String title, String content, NoticeTag tag, String imageUrl, Boolean removeImage) {
     UpdateNoticeRequest request = createInstance(UpdateNoticeRequest.class);
     setField(request, "title", title);
     setField(request, "content", content);
     setField(request, "tag", tag);
     setField(request, "imageUrl", imageUrl);
+    setField(request, "removeImage", removeImage);
     return request;
   }
 
   private static Notice notice(
       Long noticeId, Long authorUserId, String authorName, GroupRole authorRole, NoticeTag tag) {
+    return notice(noticeId, authorUserId, authorName, authorRole, tag, null);
+  }
+
+  private static Notice notice(
+      Long noticeId,
+      Long authorUserId,
+      String authorName,
+      GroupRole authorRole,
+      NoticeTag tag,
+      String imageUrl) {
     Notice notice =
         Notice.builder()
             .authorMember(groupMember(authorUserId, authorName, authorRole))
             .title("공지 제목")
             .content("공지 내용")
             .tag(tag)
-            .imageUrl(null)
+            .imageUrl(imageUrl)
             .build();
     setField(notice, "id", noticeId);
     setField(notice, "createdAt", CREATED_AT);

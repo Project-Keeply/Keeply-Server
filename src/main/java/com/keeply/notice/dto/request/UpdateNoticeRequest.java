@@ -21,11 +21,26 @@ public class UpdateNoticeRequest {
   @Schema(description = "첨부 이미지 URL", example = "https://example.com/notices/updated-image.png")
   private String imageUrl;
 
+  @Schema(description = "기존 첨부 이미지 제거 여부", example = "false")
+  private Boolean removeImage;
+
   public boolean hasUpdateField() {
-    return title != null || content != null || tag != null || imageUrl != null;
+    return title != null
+        || content != null
+        || tag != null
+        || imageUrl != null
+        || removeImage != null;
   }
 
   public boolean hasBlankField() {
     return (title != null && title.isBlank()) || (content != null && content.isBlank());
+  }
+
+  public boolean hasImageConflict() {
+    return Boolean.TRUE.equals(removeImage) && imageUrl != null;
+  }
+
+  public boolean isRemoveImage() {
+    return Boolean.TRUE.equals(removeImage);
   }
 }
