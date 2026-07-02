@@ -13,7 +13,7 @@ public class UpdateNoticeRequest {
   private NoticeTag tag;
   private String imageUrl;
 
-  public boolean hsaUpdateField() {
+  public boolean hasUpdateField() {
     return title != null || content != null || tag != null || imageUrl != null;
   }
 }
