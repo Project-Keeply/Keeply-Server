@@ -83,6 +83,21 @@ class NoticeServiceImplTest {
       assertThat(response.getAuthorUserId()).isEqualTo(USER_ID);
       assertThat(response.getAuthorName()).isEqualTo("작성자");
     }
+
+    @Test
+    @DisplayName("그룹 멤버가 아니면 NOT_GROUP_MEMBER 예외를 던진다")
+    void throwsWhenNotGroupMember() {
+      CreateNoticeRequest request =
+          createRequest("신상품 입고 안내", "신상품 진열 상태를 확인해주세요.", NoticeTag.DAILY, null);
+      given(groupMemberRepository.findByGroupIdAndUserId(GROUP_ID, USER_ID))
+          .willReturn(Optional.empty());
+
+      assertThatThrownBy(() -> noticeService.createNotice(USER_ID, GROUP_ID, request))
+          .isInstanceOf(CustomException.class)
+          .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOT_GROUP_MEMBER);
+
+      verify(noticeRepository, never()).save(any());
+    }
   }
 
   @Nested
