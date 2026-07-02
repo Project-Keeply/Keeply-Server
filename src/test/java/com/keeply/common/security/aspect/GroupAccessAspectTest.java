@@ -44,6 +44,9 @@ class GroupAccessAspectTest {
     public void withGroupId(
         @AuthenticationPrincipal Long userId, @PathVariable("groupId") Long groupId) {}
 
+    public void withImplicitGroupId(
+        @AuthenticationPrincipal Long userId, @PathVariable Long groupId) {}
+
     public void withoutGroupId(@AuthenticationPrincipal Long userId) {}
   }
 
@@ -64,23 +67,10 @@ class GroupAccessAspectTest {
   @DisplayName("@GroupMemberOnly")
   class MemberOnly {
     @Test
-    @DisplayName("OWNER 멤버 → 통과")
-    void ownerPasses() throws Exception {
+    @DisplayName("소속 멤버 존재 → 통과 (role 무관)")
+    void memberExistsPasses() throws Exception {
       mockJoinPointWithGroupId();
-      GroupMember member = memberOf(GroupRole.OWNER);
-      given(groupMemberRepository.findByGroupIdAndUserId(GROUP_ID, USER_ID))
-          .willReturn(Optional.of(member));
-
-      assertThatCode(() -> aspect.checkGroupMember(joinPoint)).doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("STAFF 멤버 → 통과")
-    void staffPasses() throws Exception {
-      mockJoinPointWithGroupId();
-      GroupMember member = memberOf(GroupRole.STAFF);
-      given(groupMemberRepository.findByGroupIdAndUserId(GROUP_ID, USER_ID))
-          .willReturn(Optional.of(member));
+      given(groupMemberRepository.existsByGroupIdAndUserId(GROUP_ID, USER_ID)).willReturn(true);
 
       assertThatCode(() -> aspect.checkGroupMember(joinPoint)).doesNotThrowAnyException();
     }
@@ -89,8 +79,7 @@ class GroupAccessAspectTest {
     @DisplayName("소속 없음 → NOT_GROUP_MEMBER")
     void notFoundThrows() throws Exception {
       mockJoinPointWithGroupId();
-      given(groupMemberRepository.findByGroupIdAndUserId(GROUP_ID, USER_ID))
-          .willReturn(Optional.empty());
+      given(groupMemberRepository.existsByGroupIdAndUserId(GROUP_ID, USER_ID)).willReturn(false);
 
       assertThatThrownBy(() -> aspect.checkGroupMember(joinPoint))
           .isInstanceOf(CustomException.class)
@@ -149,5 +138,17 @@ class GroupAccessAspectTest {
     assertThatThrownBy(() -> aspect.checkGroupMember(joinPoint))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("groupId");
+  }
+
+  @Test
+  @DisplayName("@PathVariable Long groupId (value 생략) → parameter 이름 fallback으로 인식")
+  void implicitPathVariableNameResolved() throws Exception {
+    Method method = DummyController.class.getMethod("withImplicitGroupId", Long.class, Long.class);
+    given(joinPoint.getSignature()).willReturn(signature);
+    given(signature.getMethod()).willReturn(method);
+    given(joinPoint.getArgs()).willReturn(new Object[] {USER_ID, GROUP_ID});
+    given(groupMemberRepository.existsByGroupIdAndUserId(GROUP_ID, USER_ID)).willReturn(true);
+
+    assertThatCode(() -> aspect.checkGroupMember(joinPoint)).doesNotThrowAnyException();
   }
 }

@@ -25,9 +25,9 @@ public class GroupAccessAspect {
   @Before("@annotation(com.keeply.common.security.annotation.GroupMemberOnly)")
   public void checkGroupMember(JoinPoint joinPoint) {
     GroupAccessArgs args = extractArgs(joinPoint);
-    groupMemberRepository
-        .findByGroupIdAndUserId(args.groupId(), args.userId())
-        .orElseThrow(() -> new CustomException(ErrorCode.NOT_GROUP_MEMBER));
+    if (!groupMemberRepository.existsByGroupIdAndUserId(args.groupId(), args.userId())) {
+      throw new CustomException(ErrorCode.NOT_GROUP_MEMBER);
+    }
   }
 
   @Before("@annotation(com.keeply.common.security.annotation.GroupOwnerOnly)")
@@ -54,14 +54,14 @@ public class GroupAccessAspect {
     for (int i = 0; i < parameters.length; i++) {
       Parameter parameter = parameters[i];
       Object value = values[i];
-      if (value == null || parameter.getType() != Long.class) {
+      if (value == null || !Long.class.equals(parameter.getType())) {
         continue;
       }
       if (userId == null && parameter.isAnnotationPresent(AuthenticationPrincipal.class)) {
         userId = (Long) value;
         continue;
       }
-      if (groupId == null && isGroupIdPathVariable(parameter)) {
+      if (groupId == null && hasGroupIdPathVariable(parameter)) {
         groupId = (Long) value;
       }
     }
@@ -76,7 +76,7 @@ public class GroupAccessAspect {
     return new GroupAccessArgs(userId, groupId);
   }
 
-  private boolean isGroupIdPathVariable(Parameter parameter) {
+  private boolean hasGroupIdPathVariable(Parameter parameter) {
     PathVariable pathVariable = parameter.getAnnotation(PathVariable.class);
     if (pathVariable == null) {
       return false;
