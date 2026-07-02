@@ -22,9 +22,13 @@ import com.keeply.notice.entity.Notice;
 import com.keeply.notice.entity.NoticeTag;
 import com.keeply.notice.repository.NoticeRepository;
 import com.keeply.user.entity.User;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import java.lang.reflect.Constructor;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -189,42 +193,6 @@ class NoticeServiceImplTest {
     }
 
     @Test
-    @DisplayName("수정 필드가 없으면 INVALID_INPUT 예외를 던진다")
-    void throwsWhenNoUpdateField() {
-      UpdateNoticeRequest request = updateRequest(null, null, null, null, null);
-
-      assertThatThrownBy(() -> noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request))
-          .isInstanceOf(CustomException.class)
-          .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
-
-      verify(noticeRepository, never()).findByIdAndGroup_Id(any(), any());
-    }
-
-    @Test
-    @DisplayName("removeImage가 false만 전달되면 INVALID_INPUT 예외를 던진다")
-    void throwsWhenOnlyRemoveImageFalse() {
-      UpdateNoticeRequest request = updateRequest(null, null, null, null, false);
-
-      assertThatThrownBy(() -> noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request))
-          .isInstanceOf(CustomException.class)
-          .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
-
-      verify(noticeRepository, never()).findByIdAndGroup_Id(any(), any());
-    }
-
-    @Test
-    @DisplayName("제목 또는 내용이 blank이면 INVALID_INPUT 예외를 던진다")
-    void throwsWhenBlankFieldExists() {
-      UpdateNoticeRequest request = updateRequest(" ", null, null, null, null);
-
-      assertThatThrownBy(() -> noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request))
-          .isInstanceOf(CustomException.class)
-          .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
-
-      verify(noticeRepository, never()).findByIdAndGroup_Id(any(), any());
-    }
-
-    @Test
     @DisplayName("removeImage가 true이면 기존 이미지를 제거한다")
     void removesImageWhenRemoveImageIsTrue() {
       Notice notice =
@@ -243,18 +211,80 @@ class NoticeServiceImplTest {
 
       assertThat(response.getImageUrl()).isNull();
     }
+  }
+
+  @Nested
+  @DisplayName("UpdateNoticeRequest 검증")
+  class UpdateNoticeRequestValidation {
+
+    private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
-    @DisplayName("imageUrl과 removeImage=true가 동시에 전달되면 INVALID_INPUT 예외를 던진다")
-    void throwsWhenImageUrlAndRemoveImageConflict() {
+    @DisplayName("수정 필드가 하나도 없으면 검증에 실패한다")
+    void failsWhenNoUpdateField() {
+      UpdateNoticeRequest request = updateRequest(null, null, null, null, null);
+
+      Set<ConstraintViolation<UpdateNoticeRequest>> violations = validator.validate(request);
+
+      assertThat(violations)
+          .anyMatch(violation -> violation.getMessage().equals("수정할 항목이 최소 하나 이상 있어야 합니다."));
+    }
+
+    @Test
+    @DisplayName("removeImage가 false만 전달되면 검증에 실패한다")
+    void failsWhenOnlyRemoveImageFalse() {
+      UpdateNoticeRequest request = updateRequest(null, null, null, null, false);
+
+      Set<ConstraintViolation<UpdateNoticeRequest>> violations = validator.validate(request);
+
+      assertThat(violations)
+          .anyMatch(violation -> violation.getMessage().equals("수정할 항목이 최소 하나 이상 있어야 합니다."));
+    }
+
+    @Test
+    @DisplayName("제목 또는 내용이 blank이면 검증에 실패한다")
+    void failsWhenTitleOrContentBlank() {
+      UpdateNoticeRequest request = updateRequest(" ", null, null, null, null);
+
+      Set<ConstraintViolation<UpdateNoticeRequest>> violations = validator.validate(request);
+
+      assertThat(violations)
+          .anyMatch(violation -> violation.getMessage().equals("제목/내용/이미지 URL은 공백일 수 없습니다."));
+    }
+
+    @Test
+    @DisplayName("imageUrl이 blank이면 검증에 실패한다")
+    void failsWhenImageUrlBlank() {
+      UpdateNoticeRequest request = updateRequest(null, null, null, " ", null);
+
+      Set<ConstraintViolation<UpdateNoticeRequest>> violations = validator.validate(request);
+
+      assertThat(violations)
+          .anyMatch(violation -> violation.getMessage().equals("제목/내용/이미지 URL은 공백일 수 없습니다."));
+    }
+
+    @Test
+    @DisplayName("imageUrl과 removeImage=true가 동시에 전달되면 검증에 실패한다")
+    void failsWhenImageUrlAndRemoveImageConflict() {
       UpdateNoticeRequest request =
           updateRequest(null, null, null, "https://example.com/image.png", true);
 
-      assertThatThrownBy(() -> noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request))
-          .isInstanceOf(CustomException.class)
-          .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT);
+      Set<ConstraintViolation<UpdateNoticeRequest>> violations = validator.validate(request);
 
-      verify(noticeRepository, never()).findByIdAndGroup_Id(any(), any());
+      assertThat(violations)
+          .anyMatch(
+              violation -> violation.getMessage().equals("이미지 제거와 이미지 URL 설정은 동시에 할 수 없습니다."));
+    }
+
+    @Test
+    @DisplayName("유효한 수정 요청이면 검증을 통과한다")
+    void passesWhenValidRequest() {
+      UpdateNoticeRequest request =
+          updateRequest("수정 제목", null, null, "https://example.com/image.png", null);
+
+      Set<ConstraintViolation<UpdateNoticeRequest>> violations = validator.validate(request);
+
+      assertThat(violations).isEmpty();
     }
   }
 

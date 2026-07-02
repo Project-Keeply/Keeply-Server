@@ -64,9 +64,6 @@ public class NoticeServiceImpl implements NoticeService {
   @Transactional
   public NoticeResponse updateNotice(
       Long userId, Long groupId, Long noticeId, UpdateNoticeRequest request) {
-    if (!request.hasUpdateField() || request.hasBlankField() || request.hasImageConflict()) {
-      throw new CustomException(ErrorCode.INVALID_INPUT);
-    }
     Notice notice = getNoticeByIdAndGroupId(noticeId, groupId);
     if (!notice.isAuthor(userId)) {
       throw new CustomException(ErrorCode.NOT_NOTICE_AUTHOR);
