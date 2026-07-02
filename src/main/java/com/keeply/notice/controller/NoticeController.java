@@ -8,6 +8,8 @@ import com.keeply.notice.dto.response.NoticeListResponse;
 import com.keeply.notice.dto.response.NoticeResponse;
 import com.keeply.notice.entity.NoticeTag;
 import com.keeply.notice.service.NoticeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,12 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/groups/{groupId}/notices")
+@Tag(name = "Notice", description = "공지 API")
 public class NoticeController {
 
   private final NoticeService noticeService;
 
   @GroupMemberOnly
   @PostMapping
+  @Operation(summary = "공지 등록")
   public ApiResponse<NoticeResponse> createNotice(
       @AuthenticationPrincipal Long userId,
       @PathVariable Long groupId,
@@ -44,6 +48,7 @@ public class NoticeController {
 
   @GroupMemberOnly
   @GetMapping
+  @Operation(summary = "공지 목록 조회")
   public ApiResponse<Page<NoticeListResponse>> getNoticeList(
       @AuthenticationPrincipal Long userId,
       @PathVariable Long groupId,
@@ -55,6 +60,7 @@ public class NoticeController {
 
   @GroupMemberOnly
   @GetMapping("/{noticeId}")
+  @Operation(summary = "공지 상세 조회")
   public ApiResponse<NoticeResponse> getNotice(
       @AuthenticationPrincipal Long userId,
       @PathVariable Long groupId,
@@ -65,6 +71,7 @@ public class NoticeController {
 
   @GroupMemberOnly
   @PatchMapping("/{noticeId}")
+  @Operation(summary = "공지 수정")
   public ApiResponse<NoticeResponse> updateNotice(
       @AuthenticationPrincipal Long userId,
       @PathVariable Long groupId,
@@ -76,6 +83,7 @@ public class NoticeController {
 
   @GroupMemberOnly
   @DeleteMapping("/{noticeId}")
+  @Operation(summary = "공지 삭제")
   public ApiResponse<Void> deleteNotice(
       @AuthenticationPrincipal Long userId,
       @PathVariable Long groupId,
