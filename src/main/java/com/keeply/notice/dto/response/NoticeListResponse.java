@@ -1,12 +1,10 @@
 package com.keeply.notice.dto.response;
 
+import com.keeply.notice.domain.NoticeDisplayPeriod;
 import com.keeply.notice.entity.Notice;
 import com.keeply.notice.entity.NoticeTag;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjusters;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,6 +43,7 @@ public class NoticeListResponse {
   private final LocalDateTime displayEndAt;
 
   public static NoticeListResponse of(Notice notice) {
+    NoticeDisplayPeriod displayPeriod = NoticeDisplayPeriod.from(notice);
     return NoticeListResponse.builder()
         .noticeId(notice.getId())
         .title(notice.getTitle())
@@ -53,23 +52,8 @@ public class NoticeListResponse {
         .authorUserId(notice.getAuthorMember().getUser().getId())
         .authorName(notice.getAuthorMember().getUser().getName())
         .createdAt(notice.getCreatedAt())
-        .displayStartAt(calculateDisplayStartAt(notice))
-        .displayEndAt(calculateDisplayEndAt(notice))
+        .displayStartAt(displayPeriod.startAt())
+        .displayEndAt(displayPeriod.endAt())
         .build();
-  }
-
-  private static LocalDateTime calculateDisplayStartAt(Notice notice) {
-    LocalDate createdDate = notice.getCreatedAt().toLocalDate();
-    if (notice.getTag() == NoticeTag.WEEKLY) {
-      return createdDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
-    }
-    return createdDate.atStartOfDay();
-  }
-
-  private static LocalDateTime calculateDisplayEndAt(Notice notice) {
-    if (notice.getTag() == NoticeTag.WEEKLY) {
-      return calculateDisplayStartAt(notice).plusWeeks(1);
-    }
-    return calculateDisplayStartAt(notice).plusDays(1);
   }
 }
