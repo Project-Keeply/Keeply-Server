@@ -16,4 +16,8 @@ public class UpdateNoticeRequest {
   public boolean hasUpdateField() {
     return title != null || content != null || tag != null || imageUrl != null;
   }
+
+  public boolean hasBlankField() {
+    return (title != null && title.isBlank()) || (content != null && content.isBlank());
+  }
 }

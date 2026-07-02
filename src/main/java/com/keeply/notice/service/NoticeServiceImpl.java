@@ -62,7 +62,7 @@ public class NoticeServiceImpl implements NoticeService {
   @Transactional
   public NoticeResponse updateNotice(
       Long userId, Long groupId, Long noticeId, UpdateNoticeRequest request) {
-    if (!request.hasUpdateField()) {
+    if (!request.hasUpdateField() || request.hasBlankField()) {
       throw new CustomException(ErrorCode.INVALID_INPUT);
     }
     Notice notice = getNoticeByIdAndGroupId(noticeId, groupId);
