@@ -70,7 +70,7 @@ public class Notice extends BaseTimeEntity {
     }
     if (isRemoveImage) {
       this.imageUrl = null;
-    } else if (imageUrl != null) {
+    } else if (imageUrl != null && !imageUrl.isBlank()) {
       this.imageUrl = imageUrl;
     }
   }
