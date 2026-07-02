@@ -56,4 +56,23 @@ public class Notice extends BaseTimeEntity {
 
   @Column(name = "image_url")
   private String imageUrl;
+
+  public void updateInfo(String title, String content, NoticeTag tag, String imageUrl) {
+    if (title != null && !title.isBlank()) {
+      this.title = title;
+    }
+    if (content != null && !content.isBlank()) {
+      this.content = content;
+    }
+    if (tag != null) {
+      this.tag = tag;
+    }
+    if (imageUrl != null) {
+      this.imageUrl = imageUrl;
+    }
+  }
+
+  public boolean isAuthor(Long userId) {
+    return authorMember.getUser().getId().equals(userId);
+  }
 }
