@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:keeply_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=GROUPS
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+
+aws:
+  s3:
+    bucket: keeply-test
+    region: ap-northeast-2
+    credentials:
+      access-key: test
+      secret-key: test
+
+app:
+  s3:
+    access-url-prefix: https://example.com
+
+jwt:
+  secret: keeply-test-secret-key-keeply-test-secret-key
+  access-token-expiration: 7200000
+  refresh-token-expiration: 1209600000
+
+kakao:
+  client-id: test
+  client-secret: test
+  redirect-uri: http://localhost:8080/auth/kakao/callback
