@@ -1,6 +1,7 @@
 package com.keeply.group.controller;
 
 import com.keeply.common.response.ApiResponse;
+import com.keeply.common.security.annotation.GroupMemberOnly;
 import com.keeply.group.dto.response.GroupMemberResponse;
 import com.keeply.group.service.GroupMemberService;
 import java.util.List;
@@ -18,12 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class GroupMemberController {
   private final GroupMemberService groupMemberService;
 
+  @GroupMemberOnly
   @GetMapping
   public ApiResponse<List<GroupMemberResponse>> getList(
       @AuthenticationPrincipal Long userId, @PathVariable Long groupId) {
     return ApiResponse.success(groupMemberService.getList(userId, groupId));
   }
 
+  @GroupMemberOnly
   @DeleteMapping("/me")
   public ApiResponse<Void> leave(@AuthenticationPrincipal Long userId, @PathVariable Long groupId) {
     groupMemberService.leave(userId, groupId);

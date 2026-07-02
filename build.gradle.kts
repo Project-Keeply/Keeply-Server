@@ -23,6 +23,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-aop")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 	implementation(platform("software.amazon.awssdk:bom:2.28.16"))
 	implementation("software.amazon.awssdk:s3")
@@ -39,6 +40,10 @@ dependencies {
 	testCompileOnly("org.projectlombok:lombok")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testAnnotationProcessor("org.projectlombok:lombok")
+}
+
+tasks.withType<JavaCompile>().configureEach {
+	options.compilerArgs.add("-parameters")
 }
 
 tasks.withType<Test> {

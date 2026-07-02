@@ -43,3 +43,9 @@
   ## Types
   - Always use DTOs for data transfer between layers (never expose Entity directly)
   - Define Service as interface, then provide implementation class
+
+  ## REST Path Variables
+  - Path variables for group-scoped resources MUST be named `groupId`
+    - Examples: `/groups/{groupId}/notices`, `/groups/{groupId}/work-logs`, `/groups/{groupId}/expiry-items`
+  - `GroupAccessAspect` (`@GroupMemberOnly` / `@GroupOwnerOnly`) scans parameters by name — do not use alternative names such as `targetGroupId`
+  - Controller parameter styles allowed: `@PathVariable Long groupId` (value omitted) or `@PathVariable("groupId") Long groupId`
