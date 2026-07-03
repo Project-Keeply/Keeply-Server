@@ -3,13 +3,16 @@ package com.keeply.common.security.aspect;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
 import com.keeply.group.repository.GroupMemberRepository;
+import com.keeply.worklog.controller.WorkLogController;
 import java.lang.reflect.Method;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -21,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -53,9 +57,13 @@ class GroupAccessAspectTest {
 
   private void mockJoinPointWithGroupId() throws NoSuchMethodException {
     Method method = DummyController.class.getMethod("withGroupId", Long.class, Long.class);
+    mockJoinPoint(method, new Object[] {USER_ID, GROUP_ID});
+  }
+
+  private void mockJoinPoint(Method method, Object[] args) {
     given(joinPoint.getSignature()).willReturn(signature);
     given(signature.getMethod()).willReturn(method);
-    given(joinPoint.getArgs()).willReturn(new Object[] {USER_ID, GROUP_ID});
+    given(joinPoint.getArgs()).willReturn(args);
   }
 
   private GroupMember memberOf(GroupRole role) {
@@ -145,11 +153,28 @@ class GroupAccessAspectTest {
   @DisplayName("@PathVariable Long groupId (value 생략) → parameter 이름 fallback으로 인식")
   void implicitPathVariableNameResolved() throws Exception {
     Method method = DummyController.class.getMethod("withImplicitGroupId", Long.class, Long.class);
-    given(joinPoint.getSignature()).willReturn(signature);
-    given(signature.getMethod()).willReturn(method);
-    given(joinPoint.getArgs()).willReturn(new Object[] {USER_ID, GROUP_ID});
+    mockJoinPoint(method, new Object[] {USER_ID, GROUP_ID});
     given(groupMemberRepository.existsByGroupIdAndUserId(GROUP_ID, USER_ID)).willReturn(true);
 
     assertThatCode(() -> aspect.checkGroupMember(joinPoint)).doesNotThrowAnyException();
+  }
+
+  @Test
+  @DisplayName("WorkLogController groupId 파라미터 → AOP에서 정상 추출")
+  void workLogControllerGroupIdResolved() throws Exception {
+    Method method =
+        WorkLogController.class.getMethod(
+            "getWorkLogList",
+            Long.class,
+            Long.class,
+            LocalDate.class,
+            LocalDate.class,
+            Pageable.class);
+    mockJoinPoint(method, new Object[] {USER_ID, GROUP_ID, null, null, Pageable.unpaged()});
+    given(groupMemberRepository.existsByGroupIdAndUserId(GROUP_ID, USER_ID)).willReturn(true);
+
+    assertThatCode(() -> aspect.checkGroupMember(joinPoint)).doesNotThrowAnyException();
+
+    verify(groupMemberRepository).existsByGroupIdAndUserId(GROUP_ID, USER_ID);
   }
 }

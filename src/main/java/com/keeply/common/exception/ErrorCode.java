@@ -40,7 +40,11 @@ public enum ErrorCode {
 
   // Notice
   NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTICE_001", "존재하지 않는 공지입니다."),
-  NOT_NOTICE_AUTHOR(HttpStatus.FORBIDDEN, "NOTICE_002", "공지 작성자만 가능한 작업입니다.");
+  NOT_NOTICE_AUTHOR(HttpStatus.FORBIDDEN, "NOTICE_002", "공지 작성자만 가능한 작업입니다."),
+
+  // WorkLog
+  WORK_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_LOG_001", "존재하지 않는 운영 로그입니다."),
+  NOT_WORK_LOG_AUTHOR(HttpStatus.FORBIDDEN, "WORK_LOG_002", "운영 로그 작성자만 가능한 작업입니다.");
 
   @NonNull private final HttpStatus httpStatus;
   private final String code;
