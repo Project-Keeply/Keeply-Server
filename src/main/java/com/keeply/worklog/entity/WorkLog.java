@@ -44,4 +44,14 @@ public class WorkLog extends BaseTimeEntity {
 
   @Column(nullable = false, columnDefinition = "TEXT")
   private String content;
+
+  public void updateContent(String content) {
+    if (content != null && !content.isBlank()) {
+      this.content = content;
+    }
+  }
+
+  public boolean isAuthor(Long userId) {
+    return authorMember.getUser().getId().equals(userId);
+  }
 }
