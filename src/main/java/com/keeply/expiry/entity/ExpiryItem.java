@@ -54,4 +54,20 @@ public class ExpiryItem extends BaseTimeEntity {
 
   @Column(name = "image_url", nullable = false)
   private String imageUrl;
+
+  public void updateInfo(String productName, LocalDate expireDate, String imageUrl) {
+    if (productName != null && !productName.isBlank()) {
+      this.productName = productName;
+    }
+    if (expireDate != null) {
+      this.expireDate = expireDate;
+    }
+    if (imageUrl != null && !imageUrl.isBlank()) {
+      this.imageUrl = imageUrl;
+    }
+  }
+
+  public boolean isAuthor(Long userId) {
+    return authorMember.getUser().getId().equals(userId);
+  }
 }
