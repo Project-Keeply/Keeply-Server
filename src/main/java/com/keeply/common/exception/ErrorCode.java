@@ -44,7 +44,11 @@ public enum ErrorCode {
 
   // WorkLog
   WORK_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "WORK_LOG_001", "존재하지 않는 운영 로그입니다."),
-  NOT_WORK_LOG_AUTHOR(HttpStatus.FORBIDDEN, "WORK_LOG_002", "운영 로그 작성자만 가능한 작업입니다.");
+  NOT_WORK_LOG_AUTHOR(HttpStatus.FORBIDDEN, "WORK_LOG_002", "운영 로그 작성자만 가능한 작업입니다."),
+
+  // ExpiryItem
+  EXPIRY_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "EXPIRY_ITEM_001", "존재하지 않는 유통기한 상품입니다."),
+  NOT_EXPIRY_ITEM_AUTHOR(HttpStatus.FORBIDDEN, "EXPIRY_ITEM_002", "유통기한 상품 작성자만 가능한 작업입니다.");
 
   @NonNull private final HttpStatus httpStatus;
   private final String code;
