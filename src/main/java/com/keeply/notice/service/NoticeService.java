@@ -14,6 +14,9 @@ public interface NoticeService {
 
   PageResponse<NoticeListResponse> getNoticeList(Long groupId, NoticeTag tag, Pageable pageable);
 
+  PageResponse<NoticeListResponse> getNoticeList(
+      Long groupId, NoticeTag tag, boolean isActive, Pageable pageable);
+
   NoticeResponse getNotice(Long groupId, Long noticeId);
 
   NoticeResponse updateNotice(

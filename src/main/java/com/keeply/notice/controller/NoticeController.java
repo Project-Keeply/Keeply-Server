@@ -10,6 +10,7 @@ import com.keeply.notice.dto.response.NoticeResponse;
 import com.keeply.notice.entity.NoticeTag;
 import com.keeply.notice.service.NoticeService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,8 +57,12 @@ public class NoticeController {
       @AuthenticationPrincipal Long userId,
       @PathVariable Long groupId,
       @RequestParam(required = false) NoticeTag tag,
+      @Parameter(description = "true이면 현재 유효한 공지만 조회합니다.")
+          @RequestParam(name = "active", defaultValue = "false")
+          boolean isActive,
       @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-    PageResponse<NoticeListResponse> response = noticeService.getNoticeList(groupId, tag, pageable);
+    PageResponse<NoticeListResponse> response =
+        noticeService.getNoticeList(groupId, tag, isActive, pageable);
     return ApiResponse.success(response);
   }
 

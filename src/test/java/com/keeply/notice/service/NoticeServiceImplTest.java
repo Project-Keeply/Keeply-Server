@@ -26,7 +26,10 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import java.lang.reflect.Constructor;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
@@ -49,9 +52,16 @@ class NoticeServiceImplTest {
   private static final Long GROUP_ID = 100L;
   private static final Long NOTICE_ID = 10L;
   private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 7, 2, 10, 30);
+  private static final ZoneId TEST_ZONE_ID = ZoneId.of("Asia/Seoul");
+  private static final Instant ACTIVE_NOW = Instant.parse("2026-07-05T03:00:00Z");
+  private static final LocalDateTime DAILY_START_AT = LocalDateTime.of(2026, 7, 5, 0, 0);
+  private static final LocalDateTime DAILY_END_AT = LocalDateTime.of(2026, 7, 6, 0, 0);
+  private static final LocalDateTime WEEKLY_START_AT = LocalDateTime.of(2026, 6, 29, 0, 0);
+  private static final LocalDateTime WEEKLY_END_AT = LocalDateTime.of(2026, 7, 6, 0, 0);
 
   @Mock private NoticeRepository noticeRepository;
   @Mock private GroupMemberRepository groupMemberRepository;
+  @Mock private Clock clock;
 
   @InjectMocks private NoticeServiceImpl noticeService;
 
@@ -113,7 +123,7 @@ class NoticeServiceImplTest {
           .willReturn(new PageImpl<>(java.util.List.of(notice), pageable, 1));
 
       PageResponse<NoticeListResponse> response =
-          noticeService.getNoticeList(GROUP_ID, null, pageable);
+          noticeService.getNoticeList(GROUP_ID, null, false, pageable);
 
       assertThat(response.getContent()).hasSize(1);
       assertThat(response.getContent().get(0).getNoticeId()).isEqualTo(NOTICE_ID);
@@ -135,12 +145,94 @@ class NoticeServiceImplTest {
           .willReturn(new PageImpl<>(java.util.List.of(notice), pageable, 1));
 
       PageResponse<NoticeListResponse> response =
-          noticeService.getNoticeList(GROUP_ID, NoticeTag.WEEKLY, pageable);
+          noticeService.getNoticeList(GROUP_ID, NoticeTag.WEEKLY, false, pageable);
 
       assertThat(response.getContent()).hasSize(1);
       assertThat(response.getContent().get(0).getTag()).isEqualTo(NoticeTag.WEEKLY);
       verify(noticeRepository).findByGroup_IdAndTag(GROUP_ID, NoticeTag.WEEKLY, pageable);
       verify(noticeRepository, never()).findByGroup_Id(any(), any());
+    }
+
+    @Test
+    @DisplayName("active가 true이고 tag가 없으면 일일/주간 활성 범위로 목록을 조회한다")
+    void getsActiveListByDailyAndWeeklyRangesWhenTagIsNull() {
+      givenCurrentDate();
+      Notice notice = notice(NOTICE_ID, USER_ID, "작성자", GroupRole.STAFF, NoticeTag.WEEKLY);
+      Pageable pageable = PageRequest.of(0, 10);
+      given(
+              noticeRepository.findActiveByGroup_Id(
+                  GROUP_ID,
+                  NoticeTag.DAILY,
+                  DAILY_START_AT,
+                  DAILY_END_AT,
+                  NoticeTag.WEEKLY,
+                  WEEKLY_START_AT,
+                  WEEKLY_END_AT,
+                  pageable))
+          .willReturn(new PageImpl<>(java.util.List.of(notice), pageable, 1));
+
+      PageResponse<NoticeListResponse> response =
+          noticeService.getNoticeList(GROUP_ID, null, true, pageable);
+
+      assertThat(response.getContent()).hasSize(1);
+      verify(noticeRepository)
+          .findActiveByGroup_Id(
+              GROUP_ID,
+              NoticeTag.DAILY,
+              DAILY_START_AT,
+              DAILY_END_AT,
+              NoticeTag.WEEKLY,
+              WEEKLY_START_AT,
+              WEEKLY_END_AT,
+              pageable);
+      verify(noticeRepository, never()).findByGroup_Id(any(), any());
+      verify(noticeRepository, never()).findByGroup_IdAndTag(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("active가 true이고 tag가 DAILY이면 오늘 생성된 일일 공지를 조회한다")
+    void getsActiveDailyListByTodayRange() {
+      givenCurrentDate();
+      Notice notice = notice(NOTICE_ID, USER_ID, "작성자", GroupRole.STAFF, NoticeTag.DAILY);
+      Pageable pageable = PageRequest.of(0, 10);
+      given(
+              noticeRepository.findByGroup_IdAndTagAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                  GROUP_ID, NoticeTag.DAILY, DAILY_START_AT, DAILY_END_AT, pageable))
+          .willReturn(new PageImpl<>(java.util.List.of(notice), pageable, 1));
+
+      PageResponse<NoticeListResponse> response =
+          noticeService.getNoticeList(GROUP_ID, NoticeTag.DAILY, true, pageable);
+
+      assertThat(response.getContent()).hasSize(1);
+      assertThat(response.getContent().get(0).getTag()).isEqualTo(NoticeTag.DAILY);
+      verify(noticeRepository)
+          .findByGroup_IdAndTagAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+              GROUP_ID, NoticeTag.DAILY, DAILY_START_AT, DAILY_END_AT, pageable);
+      verify(noticeRepository, never()).findByGroup_Id(any(), any());
+      verify(noticeRepository, never()).findByGroup_IdAndTag(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("active가 true이고 tag가 WEEKLY이면 이번 주 생성된 주간 공지를 조회한다")
+    void getsActiveWeeklyListByThisWeekRange() {
+      givenCurrentDate();
+      Notice notice = notice(NOTICE_ID, USER_ID, "작성자", GroupRole.STAFF, NoticeTag.WEEKLY);
+      Pageable pageable = PageRequest.of(0, 10);
+      given(
+              noticeRepository.findByGroup_IdAndTagAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                  GROUP_ID, NoticeTag.WEEKLY, WEEKLY_START_AT, WEEKLY_END_AT, pageable))
+          .willReturn(new PageImpl<>(java.util.List.of(notice), pageable, 1));
+
+      PageResponse<NoticeListResponse> response =
+          noticeService.getNoticeList(GROUP_ID, NoticeTag.WEEKLY, true, pageable);
+
+      assertThat(response.getContent()).hasSize(1);
+      assertThat(response.getContent().get(0).getTag()).isEqualTo(NoticeTag.WEEKLY);
+      verify(noticeRepository)
+          .findByGroup_IdAndTagAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+              GROUP_ID, NoticeTag.WEEKLY, WEEKLY_START_AT, WEEKLY_END_AT, pageable);
+      verify(noticeRepository, never()).findByGroup_Id(any(), any());
+      verify(noticeRepository, never()).findByGroup_IdAndTag(any(), any(), any());
     }
   }
 
@@ -449,6 +541,11 @@ class NoticeServiceImplTest {
 
   private static void setField(Object target, String name, Object value) {
     ReflectionTestUtils.setField(target, name, value);
+  }
+
+  private void givenCurrentDate() {
+    given(clock.instant()).willReturn(ACTIVE_NOW);
+    given(clock.getZone()).willReturn(TEST_ZONE_ID);
   }
 
   private static <T> T createInstance(Class<T> type) {
