@@ -13,6 +13,11 @@ import com.keeply.notice.dto.response.NoticeResponse;
 import com.keeply.notice.entity.Notice;
 import com.keeply.notice.entity.NoticeTag;
 import com.keeply.notice.repository.NoticeRepository;
+import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +30,7 @@ public class NoticeServiceImpl implements NoticeService {
 
   private final NoticeRepository noticeRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final Clock clock;
 
   @Override
   @Transactional
@@ -46,10 +52,17 @@ public class NoticeServiceImpl implements NoticeService {
   @Transactional(readOnly = true)
   public PageResponse<NoticeListResponse> getNoticeList(
       Long groupId, NoticeTag tag, Pageable pageable) {
+    return getNoticeList(groupId, tag, false, pageable);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public PageResponse<NoticeListResponse> getNoticeList(
+      Long groupId, NoticeTag tag, boolean isActive, Pageable pageable) {
     Page<Notice> notices =
-        tag == null
-            ? noticeRepository.findByGroup_Id(groupId, pageable)
-            : noticeRepository.findByGroup_IdAndTag(groupId, tag, pageable);
+        isActive
+            ? getActiveNoticePage(groupId, tag, pageable)
+            : getNoticePage(groupId, tag, pageable);
     return PageResponse.of(notices.map(NoticeListResponse::of));
   }
 
@@ -92,6 +105,38 @@ public class NoticeServiceImpl implements NoticeService {
     return noticeRepository
         .findByIdAndGroup_Id(noticeId, groupId)
         .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
+  }
+
+  private Page<Notice> getNoticePage(Long groupId, NoticeTag tag, Pageable pageable) {
+    return tag == null
+        ? noticeRepository.findByGroup_Id(groupId, pageable)
+        : noticeRepository.findByGroup_IdAndTag(groupId, tag, pageable);
+  }
+
+  private Page<Notice> getActiveNoticePage(Long groupId, NoticeTag tag, Pageable pageable) {
+    LocalDate today = LocalDate.now(clock);
+    LocalDateTime dailyStartAt = today.atStartOfDay();
+    LocalDateTime dailyEndAt = dailyStartAt.plusDays(1);
+    LocalDateTime weeklyStartAt =
+        today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
+    LocalDateTime weeklyEndAt = weeklyStartAt.plusWeeks(1);
+
+    if (tag == null) {
+      return noticeRepository.findActiveByGroup_Id(
+          groupId,
+          NoticeTag.DAILY,
+          dailyStartAt,
+          dailyEndAt,
+          NoticeTag.WEEKLY,
+          weeklyStartAt,
+          weeklyEndAt,
+          pageable);
+    }
+
+    LocalDateTime startAt = tag == NoticeTag.WEEKLY ? weeklyStartAt : dailyStartAt;
+    LocalDateTime endAt = tag == NoticeTag.WEEKLY ? weeklyEndAt : dailyEndAt;
+    return noticeRepository.findByGroup_IdAndTagAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+        groupId, tag, startAt, endAt, pageable);
   }
 
   private GroupMember getGroupMember(Long groupId, Long userId) {
