@@ -6,6 +6,7 @@ import com.keeply.common.response.PageResponse;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
 import com.keeply.group.repository.GroupMemberRepository;
+import com.keeply.notice.domain.NoticeDisplayPeriod;
 import com.keeply.notice.dto.request.CreateNoticeRequest;
 import com.keeply.notice.dto.request.UpdateNoticeRequest;
 import com.keeply.notice.dto.response.NoticeListResponse;
@@ -14,10 +15,8 @@ import com.keeply.notice.entity.Notice;
 import com.keeply.notice.entity.NoticeTag;
 import com.keeply.notice.repository.NoticeRepository;
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjusters;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -115,26 +114,25 @@ public class NoticeServiceImpl implements NoticeService {
 
   private Page<Notice> getActiveNoticePage(Long groupId, NoticeTag tag, Pageable pageable) {
     LocalDate today = LocalDate.now(clock);
-    LocalDateTime dailyStartAt = today.atStartOfDay();
-    LocalDateTime dailyEndAt = dailyStartAt.plusDays(1);
-    LocalDateTime weeklyStartAt =
-        today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
-    LocalDateTime weeklyEndAt = weeklyStartAt.plusWeeks(1);
+    NoticeDisplayPeriod dailyDisplayPeriod = NoticeDisplayPeriod.from(NoticeTag.DAILY, today);
+    NoticeDisplayPeriod weeklyDisplayPeriod = NoticeDisplayPeriod.from(NoticeTag.WEEKLY, today);
 
     if (tag == null) {
       return noticeRepository.findActiveByGroup_Id(
           groupId,
           NoticeTag.DAILY,
-          dailyStartAt,
-          dailyEndAt,
+          dailyDisplayPeriod.startAt(),
+          dailyDisplayPeriod.endAt(),
           NoticeTag.WEEKLY,
-          weeklyStartAt,
-          weeklyEndAt,
+          weeklyDisplayPeriod.startAt(),
+          weeklyDisplayPeriod.endAt(),
           pageable);
     }
 
-    LocalDateTime startAt = tag == NoticeTag.WEEKLY ? weeklyStartAt : dailyStartAt;
-    LocalDateTime endAt = tag == NoticeTag.WEEKLY ? weeklyEndAt : dailyEndAt;
+    NoticeDisplayPeriod displayPeriod =
+        tag == NoticeTag.WEEKLY ? weeklyDisplayPeriod : dailyDisplayPeriod;
+    LocalDateTime startAt = displayPeriod.startAt();
+    LocalDateTime endAt = displayPeriod.endAt();
     return noticeRepository.findByGroup_IdAndTagAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
         groupId, tag, startAt, endAt, pageable);
   }
