@@ -14,12 +14,18 @@ public class UserResponse {
   private final Long id;
   private final String name;
   private final String profileImageUrl;
+  private final String groupName;
 
   public static UserResponse of(User user) {
+    return of(user, null);
+  }
+
+  public static UserResponse of(User user, String groupName) {
     return UserResponse.builder()
         .id(user.getId())
         .name(user.getName())
         .profileImageUrl(user.getProfileImageUrl())
+        .groupName(groupName)
         .build();
   }
 }

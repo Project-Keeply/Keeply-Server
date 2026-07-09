@@ -14,6 +14,9 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
   @Query(value = "SELECT * FROM group_members WHERE user_id = :userId", nativeQuery = true)
   Optional<GroupMember> findByUserIdIncludingDeleted(@Param("userId") Long userId);
 
+  @Query("SELECT gm FROM GroupMember gm JOIN FETCH gm.group WHERE gm.user.id = :userId")
+  Optional<GroupMember> findByUserIdWithGroup(@Param("userId") Long userId);
+
   Optional<GroupMember> findByGroupIdAndUserId(Long groupId, Long userId);
 
   boolean existsByUserId(Long userId);

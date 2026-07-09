@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
         userRepository
             .findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    return UserResponse.of(user);
+    return UserResponse.of(user, getGroupName(userId));
   }
 
   @Override
@@ -39,7 +39,7 @@ public class UserServiceImpl implements UserService {
             .findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     user.updateName(request.getName());
-    return UserResponse.of(user);
+    return UserResponse.of(user, getGroupName(userId));
   }
 
   @Override
@@ -62,5 +62,12 @@ public class UserServiceImpl implements UserService {
 
     refreshTokenRepository.deleteByUser(user);
     user.markDeleted();
+  }
+
+  private String getGroupName(Long userId) {
+    return groupMemberRepository
+        .findByUserIdWithGroup(userId)
+        .map(groupMember -> groupMember.getGroup().getName())
+        .orElse(null);
   }
 }
