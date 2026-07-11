@@ -3,6 +3,7 @@ package com.keeply.notice.service;
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
 import com.keeply.common.response.PageResponse;
+import com.keeply.file.service.FileService;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
 import com.keeply.group.repository.GroupMemberRepository;
@@ -18,6 +19,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,11 @@ public class NoticeServiceImpl implements NoticeService {
 
   private final NoticeRepository noticeRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final FileService fileService;
   private final Clock clock;
+
+  @Value("${app.s3.access-url-prefix}")
+  private String accessUrlPrefix;
 
   @Override
   @Transactional
@@ -44,7 +50,7 @@ public class NoticeServiceImpl implements NoticeService {
             .imageUrl(request.getImageUrl())
             .build();
     Notice savedNotice = noticeRepository.save(notice);
-    return NoticeResponse.of(savedNotice);
+    return toNoticeResponse(savedNotice);
   }
 
   @Override
@@ -62,14 +68,14 @@ public class NoticeServiceImpl implements NoticeService {
         isActive
             ? getActiveNoticePage(groupId, tag, pageable)
             : getNoticePage(groupId, tag, pageable);
-    return PageResponse.of(notices.map(NoticeListResponse::of));
+    return PageResponse.of(notices.map(this::toNoticeListResponse));
   }
 
   @Override
   @Transactional(readOnly = true)
   public NoticeResponse getNotice(Long groupId, Long noticeId) {
     Notice notice = getNoticeByIdAndGroupId(noticeId, groupId);
-    return NoticeResponse.of(notice);
+    return toNoticeResponse(notice);
   }
 
   @Override
@@ -86,7 +92,7 @@ public class NoticeServiceImpl implements NoticeService {
         request.getTag(),
         request.getImageUrl(),
         request.isRemoveImage());
-    return NoticeResponse.of(notice);
+    return toNoticeResponse(notice);
   }
 
   @Override
@@ -141,5 +147,34 @@ public class NoticeServiceImpl implements NoticeService {
     return groupMemberRepository
         .findByGroupIdAndUserId(groupId, userId)
         .orElseThrow(() -> new CustomException(ErrorCode.NOT_GROUP_MEMBER));
+  }
+
+  private NoticeResponse toNoticeResponse(Notice notice) {
+    return NoticeResponse.of(notice, getReadableImageUrl(notice.getImageUrl()));
+  }
+
+  private NoticeListResponse toNoticeListResponse(Notice notice) {
+    return NoticeListResponse.of(notice, getReadableImageUrl(notice.getImageUrl()));
+  }
+
+  private String getReadableImageUrl(String imageUrl) {
+    if (imageUrl == null
+        || imageUrl.isBlank()
+        || accessUrlPrefix == null
+        || accessUrlPrefix.isBlank()) {
+      return imageUrl;
+    }
+
+    String prefix = accessUrlPrefix.endsWith("/") ? accessUrlPrefix : accessUrlPrefix + "/";
+    if (!imageUrl.startsWith(prefix)) {
+      return imageUrl;
+    }
+
+    String fileKey = imageUrl.substring(prefix.length());
+    if (fileKey.isBlank()) {
+      return imageUrl;
+    }
+
+    return fileService.createDownloadUrl(fileKey).getPresignedUrl();
   }
 }
