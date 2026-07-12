@@ -10,6 +10,8 @@ public interface FileService {
 
   PresignedDownloadUrlResponse createDownloadUrl(String fileKey);
 
+  String getReadableUrl(String imageUrl);
+
   /**
    * 업로드된 파일을 사후 검증한다 (사이즈/MIME).
    *

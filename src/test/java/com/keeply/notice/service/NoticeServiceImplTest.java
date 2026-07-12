@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
 import com.keeply.common.response.PageResponse;
-import com.keeply.file.dto.response.PresignedDownloadUrlResponse;
 import com.keeply.file.service.FileService;
 import com.keeply.group.entity.Group;
 import com.keeply.group.entity.GroupMember;
@@ -60,10 +59,8 @@ class NoticeServiceImplTest {
   private static final LocalDateTime DAILY_END_AT = LocalDateTime.of(2026, 7, 6, 0, 0);
   private static final LocalDateTime WEEKLY_START_AT = LocalDateTime.of(2026, 6, 29, 0, 0);
   private static final LocalDateTime WEEKLY_END_AT = LocalDateTime.of(2026, 7, 6, 0, 0);
-  private static final String ACCESS_URL_PREFIX =
-      "https://keeply-images.s3.ap-northeast-2.amazonaws.com";
-  private static final String NOTICE_FILE_KEY = "notice/2026/07/image.png";
-  private static final String NOTICE_ACCESS_URL = ACCESS_URL_PREFIX + "/" + NOTICE_FILE_KEY;
+  private static final String NOTICE_ACCESS_URL =
+      "https://keeply-images.s3.ap-northeast-2.amazonaws.com/notice/2026/07/image.png";
   private static final String PRESIGNED_IMAGE_URL =
       "https://keeply-images.s3.ap-northeast-2.amazonaws.com/notice/2026/07/image.png?signature=fake";
 
@@ -250,17 +247,15 @@ class NoticeServiceImplTest {
       Notice notice =
           notice(NOTICE_ID, USER_ID, "작성자", GroupRole.STAFF, NoticeTag.DAILY, NOTICE_ACCESS_URL);
       Pageable pageable = PageRequest.of(0, 10);
-      setField(noticeService, "accessUrlPrefix", ACCESS_URL_PREFIX);
       given(noticeRepository.findByGroup_Id(GROUP_ID, pageable))
           .willReturn(new PageImpl<>(java.util.List.of(notice), pageable, 1));
-      given(fileService.createDownloadUrl(NOTICE_FILE_KEY))
-          .willReturn(PresignedDownloadUrlResponse.of(PRESIGNED_IMAGE_URL));
+      given(fileService.getReadableUrl(NOTICE_ACCESS_URL)).willReturn(PRESIGNED_IMAGE_URL);
 
       PageResponse<NoticeListResponse> response =
           noticeService.getNoticeList(GROUP_ID, null, false, pageable);
 
       assertThat(response.getContent().get(0).getImageUrl()).isEqualTo(PRESIGNED_IMAGE_URL);
-      verify(fileService).createDownloadUrl(NOTICE_FILE_KEY);
+      verify(fileService).getReadableUrl(NOTICE_ACCESS_URL);
     }
   }
 
@@ -286,16 +281,14 @@ class NoticeServiceImplTest {
     void convertsS3AccessUrlToPresignedUrl() {
       Notice notice =
           notice(NOTICE_ID, USER_ID, "작성자", GroupRole.STAFF, NoticeTag.DAILY, NOTICE_ACCESS_URL);
-      setField(noticeService, "accessUrlPrefix", ACCESS_URL_PREFIX);
       given(noticeRepository.findByIdAndGroup_Id(NOTICE_ID, GROUP_ID))
           .willReturn(Optional.of(notice));
-      given(fileService.createDownloadUrl(NOTICE_FILE_KEY))
-          .willReturn(PresignedDownloadUrlResponse.of(PRESIGNED_IMAGE_URL));
+      given(fileService.getReadableUrl(NOTICE_ACCESS_URL)).willReturn(PRESIGNED_IMAGE_URL);
 
       NoticeResponse response = noticeService.getNotice(GROUP_ID, NOTICE_ID);
 
       assertThat(response.getImageUrl()).isEqualTo(PRESIGNED_IMAGE_URL);
-      verify(fileService).createDownloadUrl(NOTICE_FILE_KEY);
+      verify(fileService).getReadableUrl(NOTICE_ACCESS_URL);
     }
 
     @Test
@@ -321,6 +314,8 @@ class NoticeServiceImplTest {
           updateRequest("수정 제목", "수정 내용", NoticeTag.WEEKLY, "https://example.com/image.png", null);
       given(noticeRepository.findByIdAndGroup_Id(NOTICE_ID, GROUP_ID))
           .willReturn(Optional.of(notice));
+      given(fileService.getReadableUrl("https://example.com/image.png"))
+          .willReturn("https://example.com/image.png");
 
       NoticeResponse response = noticeService.updateNotice(USER_ID, GROUP_ID, NOTICE_ID, request);
 

@@ -95,6 +95,28 @@ public class FileServiceImpl implements FileService {
   }
 
   @Override
+  public String getReadableUrl(String imageUrl) {
+    if (imageUrl == null
+        || imageUrl.isBlank()
+        || accessUrlPrefix == null
+        || accessUrlPrefix.isBlank()) {
+      return imageUrl;
+    }
+
+    String prefix = accessUrlPrefix.endsWith("/") ? accessUrlPrefix : accessUrlPrefix + "/";
+    if (!imageUrl.startsWith(prefix)) {
+      return imageUrl;
+    }
+
+    String fileKey = imageUrl.substring(prefix.length());
+    if (fileKey.isBlank()) {
+      return imageUrl;
+    }
+
+    return createDownloadUrl(fileKey).getPresignedUrl();
+  }
+
+  @Override
   public void validateUploadedFile(String fileKey) {
     HeadObjectResponse headResponse = headObject(fileKey);
 

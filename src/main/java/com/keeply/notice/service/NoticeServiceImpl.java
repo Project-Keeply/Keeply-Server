@@ -19,7 +19,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,9 +32,6 @@ public class NoticeServiceImpl implements NoticeService {
   private final GroupMemberRepository groupMemberRepository;
   private final FileService fileService;
   private final Clock clock;
-
-  @Value("${app.s3.access-url-prefix}")
-  private String accessUrlPrefix;
 
   @Override
   @Transactional
@@ -150,31 +146,10 @@ public class NoticeServiceImpl implements NoticeService {
   }
 
   private NoticeResponse toNoticeResponse(Notice notice) {
-    return NoticeResponse.of(notice, getReadableImageUrl(notice.getImageUrl()));
+    return NoticeResponse.of(notice, fileService.getReadableUrl(notice.getImageUrl()));
   }
 
   private NoticeListResponse toNoticeListResponse(Notice notice) {
-    return NoticeListResponse.of(notice, getReadableImageUrl(notice.getImageUrl()));
-  }
-
-  private String getReadableImageUrl(String imageUrl) {
-    if (imageUrl == null
-        || imageUrl.isBlank()
-        || accessUrlPrefix == null
-        || accessUrlPrefix.isBlank()) {
-      return imageUrl;
-    }
-
-    String prefix = accessUrlPrefix.endsWith("/") ? accessUrlPrefix : accessUrlPrefix + "/";
-    if (!imageUrl.startsWith(prefix)) {
-      return imageUrl;
-    }
-
-    String fileKey = imageUrl.substring(prefix.length());
-    if (fileKey.isBlank()) {
-      return imageUrl;
-    }
-
-    return fileService.createDownloadUrl(fileKey).getPresignedUrl();
+    return NoticeListResponse.of(notice, fileService.getReadableUrl(notice.getImageUrl()));
   }
 }
