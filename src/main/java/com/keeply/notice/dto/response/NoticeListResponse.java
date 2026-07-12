@@ -21,6 +21,9 @@ public class NoticeListResponse {
   @Schema(description = "공지 제목", example = "신상품 입고 안내")
   private final String title;
 
+  @Schema(description = "공지 내용", example = "오늘 야간 근무자는 신상품 진열 상태를 확인해주세요.")
+  private final String content;
+
   @Schema(description = "공지 태그", example = "DAILY")
   private final NoticeTag tag;
 
@@ -51,6 +54,7 @@ public class NoticeListResponse {
     return NoticeListResponse.builder()
         .noticeId(notice.getId())
         .title(notice.getTitle())
+        .content(notice.getContent())
         .tag(notice.getTag())
         .imageUrl(imageUrl)
         .authorUserId(notice.getAuthorMember().getUser().getId())

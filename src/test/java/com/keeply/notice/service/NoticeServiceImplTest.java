@@ -133,6 +133,7 @@ class NoticeServiceImplTest {
 
       assertThat(response.getContent()).hasSize(1);
       assertThat(response.getContent().get(0).getNoticeId()).isEqualTo(NOTICE_ID);
+      assertThat(response.getContent().get(0).getContent()).isEqualTo("공지 내용");
       assertThat(response.getPage()).isZero();
       assertThat(response.getSize()).isEqualTo(10);
       assertThat(response.getTotalElements()).isEqualTo(1);
