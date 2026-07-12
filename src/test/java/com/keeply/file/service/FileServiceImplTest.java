@@ -176,6 +176,66 @@ class FileServiceImplTest {
     }
   }
 
+  // ---------- getReadableUrl ----------
+
+  @Nested
+  @DisplayName("getReadableUrl")
+  class GetReadableUrl {
+
+    @Test
+    @DisplayName("S3 accessUrl이면 presigned GET URL로 변환한다")
+    void convertsAccessUrlToPresignedGetUrl() throws Exception {
+      PresignedGetObjectRequest fake = fakeGetPresigned();
+      given(s3Properties.getBucket()).willReturn(BUCKET);
+      given(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class))).willReturn(fake);
+
+      String readableUrl =
+          fileService.getReadableUrl(ACCESS_URL_PREFIX + "/notice/2026/06/abc.jpg");
+
+      assertThat(readableUrl).isEqualTo(FAKE_PRESIGNED_URL);
+    }
+
+    @Test
+    @DisplayName("외부 URL이면 변환하지 않고 그대로 반환한다")
+    void preservesExternalUrl() {
+      String externalUrl = "https://example.com/image.png";
+
+      String readableUrl = fileService.getReadableUrl(externalUrl);
+
+      assertThat(readableUrl).isEqualTo(externalUrl);
+      verify(s3Presigner, never()).presignGetObject(any(GetObjectPresignRequest.class));
+    }
+
+    @Test
+    @DisplayName("imageUrl이 null이면 변환하지 않고 그대로 반환한다")
+    void preservesNullUrl() {
+      String readableUrl = fileService.getReadableUrl(null);
+
+      assertThat(readableUrl).isNull();
+      verify(s3Presigner, never()).presignGetObject(any(GetObjectPresignRequest.class));
+    }
+
+    @Test
+    @DisplayName("imageUrl이 blank이면 변환하지 않고 그대로 반환한다")
+    void preservesBlankUrl() {
+      String readableUrl = fileService.getReadableUrl(" ");
+
+      assertThat(readableUrl).isEqualTo(" ");
+      verify(s3Presigner, never()).presignGetObject(any(GetObjectPresignRequest.class));
+    }
+
+    @Test
+    @DisplayName("prefix만 있고 fileKey가 없으면 변환하지 않고 그대로 반환한다")
+    void preservesEmptyFileKeyUrl() {
+      String accessUrl = ACCESS_URL_PREFIX + "/";
+
+      String readableUrl = fileService.getReadableUrl(accessUrl);
+
+      assertThat(readableUrl).isEqualTo(accessUrl);
+      verify(s3Presigner, never()).presignGetObject(any(GetObjectPresignRequest.class));
+    }
+  }
+
   // ---------- validateUploadedFile ----------
 
   @Nested
