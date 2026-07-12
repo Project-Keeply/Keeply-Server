@@ -3,6 +3,7 @@ package com.keeply.notice.service;
 import com.keeply.common.exception.CustomException;
 import com.keeply.common.exception.ErrorCode;
 import com.keeply.common.response.PageResponse;
+import com.keeply.file.service.FileService;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
 import com.keeply.group.repository.GroupMemberRepository;
@@ -29,6 +30,7 @@ public class NoticeServiceImpl implements NoticeService {
 
   private final NoticeRepository noticeRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final FileService fileService;
   private final Clock clock;
 
   @Override
@@ -44,7 +46,7 @@ public class NoticeServiceImpl implements NoticeService {
             .imageUrl(request.getImageUrl())
             .build();
     Notice savedNotice = noticeRepository.save(notice);
-    return NoticeResponse.of(savedNotice);
+    return toNoticeResponse(savedNotice);
   }
 
   @Override
@@ -62,14 +64,14 @@ public class NoticeServiceImpl implements NoticeService {
         isActive
             ? getActiveNoticePage(groupId, tag, pageable)
             : getNoticePage(groupId, tag, pageable);
-    return PageResponse.of(notices.map(NoticeListResponse::of));
+    return PageResponse.of(notices.map(this::toNoticeListResponse));
   }
 
   @Override
   @Transactional(readOnly = true)
   public NoticeResponse getNotice(Long groupId, Long noticeId) {
     Notice notice = getNoticeByIdAndGroupId(noticeId, groupId);
-    return NoticeResponse.of(notice);
+    return toNoticeResponse(notice);
   }
 
   @Override
@@ -86,7 +88,7 @@ public class NoticeServiceImpl implements NoticeService {
         request.getTag(),
         request.getImageUrl(),
         request.isRemoveImage());
-    return NoticeResponse.of(notice);
+    return toNoticeResponse(notice);
   }
 
   @Override
@@ -141,5 +143,13 @@ public class NoticeServiceImpl implements NoticeService {
     return groupMemberRepository
         .findByGroupIdAndUserId(groupId, userId)
         .orElseThrow(() -> new CustomException(ErrorCode.NOT_GROUP_MEMBER));
+  }
+
+  private NoticeResponse toNoticeResponse(Notice notice) {
+    return NoticeResponse.of(notice, fileService.getReadableUrl(notice.getImageUrl()));
+  }
+
+  private NoticeListResponse toNoticeListResponse(Notice notice) {
+    return NoticeListResponse.of(notice, fileService.getReadableUrl(notice.getImageUrl()));
   }
 }

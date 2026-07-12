@@ -43,12 +43,16 @@ public class NoticeListResponse {
   private final LocalDateTime displayEndAt;
 
   public static NoticeListResponse of(Notice notice) {
+    return of(notice, notice.getImageUrl());
+  }
+
+  public static NoticeListResponse of(Notice notice, String imageUrl) {
     NoticeDisplayPeriod displayPeriod = NoticeDisplayPeriod.from(notice);
     return NoticeListResponse.builder()
         .noticeId(notice.getId())
         .title(notice.getTitle())
         .tag(notice.getTag())
-        .imageUrl(notice.getImageUrl())
+        .imageUrl(imageUrl)
         .authorUserId(notice.getAuthorMember().getUser().getId())
         .authorName(notice.getAuthorMember().getUser().getName())
         .createdAt(notice.getCreatedAt())
