@@ -15,6 +15,7 @@ import com.keeply.expiry.dto.request.CreateExpiryItemRequest;
 import com.keeply.expiry.dto.request.UpdateExpiryItemRequest;
 import com.keeply.expiry.dto.response.ExpiryItemResponse;
 import com.keeply.expiry.entity.ExpiryItem;
+import com.keeply.expiry.entity.ExpiryItemCategory;
 import com.keeply.expiry.repository.ExpiryItemRepository;
 import com.keeply.group.entity.Group;
 import com.keeply.group.entity.GroupMember;
@@ -52,6 +53,8 @@ class ExpiryItemServiceImplTest {
   private static final Long EXPIRY_ITEM_ID = 10L;
   private static final LocalDate EXPIRE_DATE = LocalDate.of(2026, 7, 10);
   private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 7, 2, 10, 30);
+  private static final ExpiryItemCategory CATEGORY = ExpiryItemCategory.FF;
+  private static final ExpiryItemCategory UPDATED_CATEGORY = ExpiryItemCategory.DAIRY;
 
   @Mock private ExpiryItemRepository expiryItemRepository;
   @Mock private GroupMemberRepository groupMemberRepository;
@@ -84,6 +87,7 @@ class ExpiryItemServiceImplTest {
       assertThat(response.getExpiryItemId()).isEqualTo(EXPIRY_ITEM_ID);
       assertThat(response.getProductName()).isEqualTo("삼각김밥 참치마요");
       assertThat(response.getExpireDate()).isEqualTo(EXPIRE_DATE);
+      assertThat(response.getCategory()).isEqualTo(CATEGORY);
       assertThat(response.getImageUrl()).isEqualTo("https://example.com/item.png");
       assertThat(response.getAuthorUserId()).isEqualTo(USER_ID);
       assertThat(response.getAuthorName()).isEqualTo("작성자");
@@ -175,6 +179,7 @@ class ExpiryItemServiceImplTest {
 
       assertThat(response.getExpiryItemId()).isEqualTo(EXPIRY_ITEM_ID);
       assertThat(response.getProductName()).isEqualTo("삼각김밥 참치마요");
+      assertThat(response.getCategory()).isEqualTo(CATEGORY);
     }
 
     @Test
@@ -198,7 +203,11 @@ class ExpiryItemServiceImplTest {
     void updatesExpiryItemWhenAuthor() {
       ExpiryItem expiryItem = expiryItem(EXPIRY_ITEM_ID, USER_ID, "작성자", GroupRole.STAFF);
       UpdateExpiryItemRequest request =
-          updateRequest("삼각김밥 전주비빔", LocalDate.of(2026, 7, 11), "https://example.com/new.png");
+          updateRequest(
+              "삼각김밥 전주비빔",
+              LocalDate.of(2026, 7, 11),
+              UPDATED_CATEGORY,
+              "https://example.com/new.png");
       given(expiryItemRepository.findByIdAndGroup_Id(EXPIRY_ITEM_ID, GROUP_ID))
           .willReturn(Optional.of(expiryItem));
 
@@ -207,6 +216,7 @@ class ExpiryItemServiceImplTest {
 
       assertThat(response.getProductName()).isEqualTo("삼각김밥 전주비빔");
       assertThat(response.getExpireDate()).isEqualTo(LocalDate.of(2026, 7, 11));
+      assertThat(response.getCategory()).isEqualTo(UPDATED_CATEGORY);
       assertThat(response.getImageUrl()).isEqualTo("https://example.com/new.png");
     }
 
@@ -345,6 +355,18 @@ class ExpiryItemServiceImplTest {
     }
 
     @Test
+    @DisplayName("category가 null이면 검증에 실패한다")
+    void failsWhenCategoryIsNull() {
+      CreateExpiryItemRequest request =
+          createRequest("삼각김밥 참치마요", EXPIRE_DATE, null, "https://example.com/item.png");
+
+      Set<ConstraintViolation<CreateExpiryItemRequest>> violations = validator.validate(request);
+
+      assertThat(violations)
+          .anyMatch(violation -> violation.getMessage().equals("상품 카테고리는 필수입니다."));
+    }
+
+    @Test
     @DisplayName("유효한 생성 요청이면 검증을 통과한다")
     void passesWhenValidRequest() {
       CreateExpiryItemRequest request =
@@ -393,22 +415,44 @@ class ExpiryItemServiceImplTest {
 
       assertThat(violations).isEmpty();
     }
+
+    @Test
+    @DisplayName("카테고리만 있어도 유효한 수정 요청이다")
+    void passesWhenOnlyCategoryIsPresent() {
+      UpdateExpiryItemRequest request = updateRequest(null, null, UPDATED_CATEGORY, null);
+
+      Set<ConstraintViolation<UpdateExpiryItemRequest>> violations = validator.validate(request);
+
+      assertThat(violations).isEmpty();
+    }
   }
 
   private static CreateExpiryItemRequest createRequest(
       String productName, LocalDate expireDate, String imageUrl) {
+    return createRequest(productName, expireDate, CATEGORY, imageUrl);
+  }
+
+  private static CreateExpiryItemRequest createRequest(
+      String productName, LocalDate expireDate, ExpiryItemCategory category, String imageUrl) {
     CreateExpiryItemRequest request = createInstance(CreateExpiryItemRequest.class);
     setField(request, "productName", productName);
     setField(request, "expireDate", expireDate);
+    setField(request, "category", category);
     setField(request, "imageUrl", imageUrl);
     return request;
   }
 
   private static UpdateExpiryItemRequest updateRequest(
       String productName, LocalDate expireDate, String imageUrl) {
+    return updateRequest(productName, expireDate, null, imageUrl);
+  }
+
+  private static UpdateExpiryItemRequest updateRequest(
+      String productName, LocalDate expireDate, ExpiryItemCategory category, String imageUrl) {
     UpdateExpiryItemRequest request = createInstance(UpdateExpiryItemRequest.class);
     setField(request, "productName", productName);
     setField(request, "expireDate", expireDate);
+    setField(request, "category", category);
     setField(request, "imageUrl", imageUrl);
     return request;
   }
@@ -420,6 +464,7 @@ class ExpiryItemServiceImplTest {
             .authorMember(groupMember(authorUserId, authorName, authorRole))
             .productName("삼각김밥 참치마요")
             .expireDate(EXPIRE_DATE)
+            .category(CATEGORY)
             .imageUrl("https://example.com/item.png")
             .build();
     setField(expiryItem, "id", expiryItemId);
