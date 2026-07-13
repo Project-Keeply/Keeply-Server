@@ -17,6 +17,7 @@ import com.keeply.expiry.dto.response.ExpiryItemResponse;
 import com.keeply.expiry.entity.ExpiryItem;
 import com.keeply.expiry.entity.ExpiryItemCategory;
 import com.keeply.expiry.repository.ExpiryItemRepository;
+import com.keeply.file.service.FileService;
 import com.keeply.group.entity.Group;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
@@ -55,9 +56,18 @@ class ExpiryItemServiceImplTest {
   private static final LocalDateTime CREATED_AT = LocalDateTime.of(2026, 7, 2, 10, 30);
   private static final ExpiryItemCategory CATEGORY = ExpiryItemCategory.FF;
   private static final ExpiryItemCategory UPDATED_CATEGORY = ExpiryItemCategory.DAIRY;
+  private static final String EXPIRY_ITEM_ACCESS_URL =
+      "https://keeply-images.s3.ap-northeast-2.amazonaws.com/expiry-item/2026/07/item.png";
+  private static final String PRESIGNED_EXPIRY_ITEM_URL =
+      "https://keeply-images.s3.ap-northeast-2.amazonaws.com/expiry-item/2026/07/item.png?signature=fake";
+  private static final String UPDATED_EXPIRY_ITEM_ACCESS_URL =
+      "https://keeply-images.s3.ap-northeast-2.amazonaws.com/expiry-item/2026/07/new.png";
+  private static final String UPDATED_PRESIGNED_EXPIRY_ITEM_URL =
+      "https://keeply-images.s3.ap-northeast-2.amazonaws.com/expiry-item/2026/07/new.png?signature=fake";
 
   @Mock private ExpiryItemRepository expiryItemRepository;
   @Mock private GroupMemberRepository groupMemberRepository;
+  @Mock private FileService fileService;
 
   @InjectMocks private ExpiryItemServiceImpl expiryItemService;
 
@@ -70,7 +80,7 @@ class ExpiryItemServiceImplTest {
     void createsExpiryItemWhenGroupMemberExists() {
       GroupMember authorMember = groupMember(USER_ID, "작성자", GroupRole.STAFF);
       CreateExpiryItemRequest request =
-          createRequest("삼각김밥 참치마요", EXPIRE_DATE, "https://example.com/item.png");
+          createRequest("삼각김밥 참치마요", EXPIRE_DATE, EXPIRY_ITEM_ACCESS_URL);
       given(groupMemberRepository.findByGroupIdAndUserId(GROUP_ID, USER_ID))
           .willReturn(Optional.of(authorMember));
       given(expiryItemRepository.save(any(ExpiryItem.class)))
@@ -81,6 +91,8 @@ class ExpiryItemServiceImplTest {
                 setField(expiryItem, "createdAt", CREATED_AT);
                 return expiryItem;
               });
+      given(fileService.getReadableUrl(EXPIRY_ITEM_ACCESS_URL))
+          .willReturn(PRESIGNED_EXPIRY_ITEM_URL);
 
       ExpiryItemResponse response = expiryItemService.createExpiryItem(USER_ID, GROUP_ID, request);
 
@@ -88,9 +100,10 @@ class ExpiryItemServiceImplTest {
       assertThat(response.getProductName()).isEqualTo("삼각김밥 참치마요");
       assertThat(response.getExpireDate()).isEqualTo(EXPIRE_DATE);
       assertThat(response.getCategory()).isEqualTo(CATEGORY);
-      assertThat(response.getImageUrl()).isEqualTo("https://example.com/item.png");
+      assertThat(response.getImageUrl()).isEqualTo(PRESIGNED_EXPIRY_ITEM_URL);
       assertThat(response.getAuthorUserId()).isEqualTo(USER_ID);
       assertThat(response.getAuthorName()).isEqualTo("작성자");
+      verify(fileService).getReadableUrl(EXPIRY_ITEM_ACCESS_URL);
     }
 
     @Test
@@ -120,26 +133,34 @@ class ExpiryItemServiceImplTest {
       Pageable pageable = PageRequest.of(0, 10);
       given(expiryItemRepository.findByGroup_Id(GROUP_ID, pageable))
           .willReturn(new PageImpl<>(List.of(expiryItem), pageable, 1));
+      given(fileService.getReadableUrl(EXPIRY_ITEM_ACCESS_URL))
+          .willReturn(PRESIGNED_EXPIRY_ITEM_URL);
 
       PageResponse<ExpiryItemResponse> response =
           expiryItemService.getExpiryItemList(GROUP_ID, null, pageable);
 
       assertThat(response.getContent()).hasSize(1);
       assertThat(response.getContent().get(0).getExpiryItemId()).isEqualTo(EXPIRY_ITEM_ID);
+      assertThat(response.getContent().get(0).getImageUrl()).isEqualTo(PRESIGNED_EXPIRY_ITEM_URL);
       assertThat(response.getPage()).isZero();
       assertThat(response.getSize()).isEqualTo(10);
       assertThat(response.getTotalElements()).isEqualTo(1);
       verify(expiryItemRepository).findByGroup_Id(GROUP_ID, pageable);
+      verify(fileService).getReadableUrl(EXPIRY_ITEM_ACCESS_URL);
     }
 
     @Test
     @DisplayName("withinDays가 있으면 오늘부터 N일 이내 상품을 조회한다")
     void getsListByWithinDays() {
+      ExpiryItem expiryItem = expiryItem(EXPIRY_ITEM_ID, USER_ID, "작성자", GroupRole.STAFF);
       Pageable pageable = PageRequest.of(0, 10);
       given(expiryItemRepository.findByGroup_IdAndExpireDateBetween(any(), any(), any(), any()))
-          .willReturn(new PageImpl<>(List.of(), pageable, 0));
+          .willReturn(new PageImpl<>(List.of(expiryItem), pageable, 1));
+      given(fileService.getReadableUrl(EXPIRY_ITEM_ACCESS_URL))
+          .willReturn(PRESIGNED_EXPIRY_ITEM_URL);
 
-      expiryItemService.getExpiryItemList(GROUP_ID, 3, pageable);
+      PageResponse<ExpiryItemResponse> response =
+          expiryItemService.getExpiryItemList(GROUP_ID, 3, pageable);
 
       ArgumentCaptor<LocalDate> fromCaptor = ArgumentCaptor.forClass(LocalDate.class);
       ArgumentCaptor<LocalDate> toCaptor = ArgumentCaptor.forClass(LocalDate.class);
@@ -148,7 +169,9 @@ class ExpiryItemServiceImplTest {
               eq(GROUP_ID), fromCaptor.capture(), toCaptor.capture(), any());
       assertThat(fromCaptor.getValue()).isEqualTo(LocalDate.now());
       assertThat(toCaptor.getValue()).isEqualTo(LocalDate.now().plusDays(3));
+      assertThat(response.getContent().get(0).getImageUrl()).isEqualTo(PRESIGNED_EXPIRY_ITEM_URL);
       verify(expiryItemRepository, never()).findByGroup_Id(any(), any());
+      verify(fileService).getReadableUrl(EXPIRY_ITEM_ACCESS_URL);
     }
 
     @Test
@@ -174,12 +197,16 @@ class ExpiryItemServiceImplTest {
       ExpiryItem expiryItem = expiryItem(EXPIRY_ITEM_ID, USER_ID, "작성자", GroupRole.STAFF);
       given(expiryItemRepository.findByIdAndGroup_Id(EXPIRY_ITEM_ID, GROUP_ID))
           .willReturn(Optional.of(expiryItem));
+      given(fileService.getReadableUrl(EXPIRY_ITEM_ACCESS_URL))
+          .willReturn(PRESIGNED_EXPIRY_ITEM_URL);
 
       ExpiryItemResponse response = expiryItemService.getExpiryItem(GROUP_ID, EXPIRY_ITEM_ID);
 
       assertThat(response.getExpiryItemId()).isEqualTo(EXPIRY_ITEM_ID);
       assertThat(response.getProductName()).isEqualTo("삼각김밥 참치마요");
       assertThat(response.getCategory()).isEqualTo(CATEGORY);
+      assertThat(response.getImageUrl()).isEqualTo(PRESIGNED_EXPIRY_ITEM_URL);
+      verify(fileService).getReadableUrl(EXPIRY_ITEM_ACCESS_URL);
     }
 
     @Test
@@ -207,9 +234,11 @@ class ExpiryItemServiceImplTest {
               "삼각김밥 전주비빔",
               LocalDate.of(2026, 7, 11),
               UPDATED_CATEGORY,
-              "https://example.com/new.png");
+              UPDATED_EXPIRY_ITEM_ACCESS_URL);
       given(expiryItemRepository.findByIdAndGroup_Id(EXPIRY_ITEM_ID, GROUP_ID))
           .willReturn(Optional.of(expiryItem));
+      given(fileService.getReadableUrl(UPDATED_EXPIRY_ITEM_ACCESS_URL))
+          .willReturn(UPDATED_PRESIGNED_EXPIRY_ITEM_URL);
 
       ExpiryItemResponse response =
           expiryItemService.updateExpiryItem(USER_ID, GROUP_ID, EXPIRY_ITEM_ID, request);
@@ -217,7 +246,8 @@ class ExpiryItemServiceImplTest {
       assertThat(response.getProductName()).isEqualTo("삼각김밥 전주비빔");
       assertThat(response.getExpireDate()).isEqualTo(LocalDate.of(2026, 7, 11));
       assertThat(response.getCategory()).isEqualTo(UPDATED_CATEGORY);
-      assertThat(response.getImageUrl()).isEqualTo("https://example.com/new.png");
+      assertThat(response.getImageUrl()).isEqualTo(UPDATED_PRESIGNED_EXPIRY_ITEM_URL);
+      verify(fileService).getReadableUrl(UPDATED_EXPIRY_ITEM_ACCESS_URL);
     }
 
     @Test
@@ -465,7 +495,7 @@ class ExpiryItemServiceImplTest {
             .productName("삼각김밥 참치마요")
             .expireDate(EXPIRE_DATE)
             .category(CATEGORY)
-            .imageUrl("https://example.com/item.png")
+            .imageUrl(EXPIRY_ITEM_ACCESS_URL)
             .build();
     setField(expiryItem, "id", expiryItemId);
     setField(expiryItem, "createdAt", CREATED_AT);
