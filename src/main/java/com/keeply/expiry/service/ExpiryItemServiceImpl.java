@@ -35,6 +35,7 @@ public class ExpiryItemServiceImpl implements ExpiryItemService {
             .authorMember(authorMember)
             .productName(request.getProductName())
             .expireDate(request.getExpireDate())
+            .category(request.getCategory())
             .imageUrl(request.getImageUrl())
             .build();
     ExpiryItem savedExpiryItem = expiryItemRepository.save(expiryItem);
@@ -68,7 +69,11 @@ public class ExpiryItemServiceImpl implements ExpiryItemService {
     if (!expiryItem.isAuthor(userId)) {
       throw new CustomException(ErrorCode.NOT_EXPIRY_ITEM_AUTHOR);
     }
-    expiryItem.updateInfo(request.getProductName(), request.getExpireDate(), request.getImageUrl());
+    expiryItem.updateInfo(
+        request.getProductName(),
+        request.getExpireDate(),
+        request.getCategory(),
+        request.getImageUrl());
     return ExpiryItemResponse.of(expiryItem);
   }
 
