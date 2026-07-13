@@ -44,12 +44,16 @@ public class ExpiryItemResponse {
   private final LocalDateTime createdAt;
 
   public static ExpiryItemResponse of(ExpiryItem expiryItem) {
+    return of(expiryItem, expiryItem.getImageUrl());
+  }
+
+  public static ExpiryItemResponse of(ExpiryItem expiryItem, String imageUrl) {
     return ExpiryItemResponse.builder()
         .expiryItemId(expiryItem.getId())
         .productName(expiryItem.getProductName())
         .expireDate(expiryItem.getExpireDate())
         .category(expiryItem.getCategory())
-        .imageUrl(expiryItem.getImageUrl())
+        .imageUrl(imageUrl)
         .dDay(ChronoUnit.DAYS.between(LocalDate.now(), expiryItem.getExpireDate()))
         .authorUserId(expiryItem.getAuthorMember().getUser().getId())
         .authorName(expiryItem.getAuthorMember().getUser().getName())
