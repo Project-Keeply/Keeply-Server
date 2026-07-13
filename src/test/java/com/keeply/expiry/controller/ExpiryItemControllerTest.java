@@ -18,6 +18,7 @@ import com.keeply.auth.jwt.JwtProvider;
 import com.keeply.common.response.PageResponse;
 import com.keeply.common.security.annotation.GroupMemberOnly;
 import com.keeply.expiry.dto.response.ExpiryItemResponse;
+import com.keeply.expiry.entity.ExpiryItemCategory;
 import com.keeply.expiry.service.ExpiryItemService;
 import com.keeply.user.repository.UserRepository;
 import java.lang.reflect.Method;
@@ -106,7 +107,7 @@ class ExpiryItemControllerTest {
             patch("/groups/{groupId}/expiry-items/{itemId}", GROUP_ID, ITEM_ID)
                 .with(authentication(new TestingAuthenticationToken(USER_ID, null)))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"productName\":\"삼각김밥 전주비빔\"}"))
+                .content("{\"category\":\"DAIRY\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
 
@@ -157,6 +158,7 @@ class ExpiryItemControllerTest {
                     {
                       "productName": "삼각김밥 참치마요",
                       "expireDate": "2026-07-10",
+                      "category": "FF",
                       "imageUrl": " "
                     }
                     """))
@@ -165,6 +167,46 @@ class ExpiryItemControllerTest {
         .andExpect(jsonPath("$.message").value("상품 이미지 URL은 필수입니다."));
 
     verifyNoInteractions(expiryItemService);
+  }
+
+  @Test
+  @DisplayName("생성 요청 category가 없으면 400을 반환한다")
+  void createExpiryItemRejectsMissingCategory() throws Exception {
+    mockMvc
+        .perform(
+            post("/groups/{groupId}/expiry-items", GROUP_ID)
+                .with(authentication(new TestingAuthenticationToken(USER_ID, null)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "productName": "삼각김밥 참치마요",
+                      "expireDate": "2026-07-10",
+                      "imageUrl": "https://example.com/item.png"
+                    }
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.success").value(false))
+        .andExpect(jsonPath("$.message").value("상품 카테고리는 필수입니다."));
+
+    verifyNoInteractions(expiryItemService);
+  }
+
+  @Test
+  @DisplayName("수정 요청 category만 있어도 서비스를 호출한다")
+  void updateExpiryItemAcceptsCategoryOnly() throws Exception {
+    setAuthenticationPrincipal(USER_ID);
+
+    mockMvc
+        .perform(
+            patch("/groups/{groupId}/expiry-items/{itemId}", GROUP_ID, ITEM_ID)
+                .with(authentication(new TestingAuthenticationToken(USER_ID, null)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"category\":\"%s\"}".formatted(ExpiryItemCategory.DAIRY)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true));
+
+    verify(expiryItemService).updateExpiryItem(eq(USER_ID), eq(GROUP_ID), eq(ITEM_ID), any());
   }
 
   @Test

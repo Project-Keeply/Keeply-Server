@@ -1,6 +1,7 @@
 package com.keeply.expiry.dto.response;
 
 import com.keeply.expiry.entity.ExpiryItem;
+import com.keeply.expiry.entity.ExpiryItemCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +25,9 @@ public class ExpiryItemResponse {
   @Schema(description = "유통기한", example = "2026-07-10")
   private final LocalDate expireDate;
 
+  @Schema(description = "상품 카테고리", example = "FF")
+  private final ExpiryItemCategory category;
+
   @Schema(description = "상품 이미지 URL", example = "https://example.com/expiry-items/image.png")
   private final String imageUrl;
 
@@ -44,6 +48,7 @@ public class ExpiryItemResponse {
         .expiryItemId(expiryItem.getId())
         .productName(expiryItem.getProductName())
         .expireDate(expiryItem.getExpireDate())
+        .category(expiryItem.getCategory())
         .imageUrl(expiryItem.getImageUrl())
         .dDay(ChronoUnit.DAYS.between(LocalDate.now(), expiryItem.getExpireDate()))
         .authorUserId(expiryItem.getAuthorMember().getUser().getId())
