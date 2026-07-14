@@ -8,6 +8,7 @@ import com.keeply.expiry.dto.request.UpdateExpiryItemRequest;
 import com.keeply.expiry.dto.response.ExpiryItemResponse;
 import com.keeply.expiry.entity.ExpiryItem;
 import com.keeply.expiry.repository.ExpiryItemRepository;
+import com.keeply.file.service.FileService;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
 import com.keeply.group.repository.GroupMemberRepository;
@@ -24,6 +25,7 @@ public class ExpiryItemServiceImpl implements ExpiryItemService {
 
   private final ExpiryItemRepository expiryItemRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final FileService fileService;
 
   @Override
   @Transactional
@@ -39,7 +41,7 @@ public class ExpiryItemServiceImpl implements ExpiryItemService {
             .imageUrl(request.getImageUrl())
             .build();
     ExpiryItem savedExpiryItem = expiryItemRepository.save(expiryItem);
-    return ExpiryItemResponse.of(savedExpiryItem);
+    return toExpiryItemResponse(savedExpiryItem);
   }
 
   @Override
@@ -51,14 +53,14 @@ public class ExpiryItemServiceImpl implements ExpiryItemService {
         withinDays == null
             ? expiryItemRepository.findByGroup_Id(groupId, pageable)
             : getExpiryItemPageWithinDays(groupId, withinDays, pageable);
-    return PageResponse.of(expiryItems.map(ExpiryItemResponse::of));
+    return PageResponse.of(expiryItems.map(this::toExpiryItemResponse));
   }
 
   @Override
   @Transactional(readOnly = true)
   public ExpiryItemResponse getExpiryItem(Long groupId, Long itemId) {
     ExpiryItem expiryItem = getExpiryItemByIdAndGroupId(itemId, groupId);
-    return ExpiryItemResponse.of(expiryItem);
+    return toExpiryItemResponse(expiryItem);
   }
 
   @Override
@@ -74,7 +76,7 @@ public class ExpiryItemServiceImpl implements ExpiryItemService {
         request.getExpireDate(),
         request.getCategory(),
         request.getImageUrl());
-    return ExpiryItemResponse.of(expiryItem);
+    return toExpiryItemResponse(expiryItem);
   }
 
   @Override
@@ -111,5 +113,9 @@ public class ExpiryItemServiceImpl implements ExpiryItemService {
     return groupMemberRepository
         .findByGroupIdAndUserId(groupId, userId)
         .orElseThrow(() -> new CustomException(ErrorCode.NOT_GROUP_MEMBER));
+  }
+
+  private ExpiryItemResponse toExpiryItemResponse(ExpiryItem expiryItem) {
+    return ExpiryItemResponse.of(expiryItem, fileService.getReadableUrl(expiryItem.getImageUrl()));
   }
 }
