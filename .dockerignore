@@ -1,0 +1,11 @@
+.git
+.gradle
+build
+.tmp
+.env
+.env.*
+!.env.example
+.DS_Store
+.history
+.hoyeon
+HELP.md
