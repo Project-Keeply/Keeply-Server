@@ -1,0 +1,2 @@
+ALTER TABLE expiry_items
+ADD COLUMN category VARCHAR(255) NOT NULL DEFAULT 'ETC' AFTER expire_date;

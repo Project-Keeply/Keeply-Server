@@ -1,0 +1,81 @@
+package com.keeply.notice.entity;
+
+import com.keeply.common.entity.BaseTimeEntity;
+import com.keeply.group.entity.Group;
+import com.keeply.group.entity.GroupMember;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Entity
+@Table(name = "notices")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+public class Notice extends BaseTimeEntity {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumns({
+    @JoinColumn(name = "group_id", referencedColumnName = "group_id", nullable = false),
+    @JoinColumn(name = "author_user_id", referencedColumnName = "user_id", nullable = false)
+  })
+  private GroupMember authorMember;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "group_id", insertable = false, updatable = false)
+  private Group group;
+
+  @Column(nullable = false)
+  private String title;
+
+  @Column(nullable = false, columnDefinition = "TEXT")
+  private String content;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private NoticeTag tag;
+
+  @Column(name = "image_url")
+  private String imageUrl;
+
+  public void updateInfo(
+      String title, String content, NoticeTag tag, String imageUrl, boolean isRemoveImage) {
+    if (title != null && !title.isBlank()) {
+      this.title = title;
+    }
+    if (content != null && !content.isBlank()) {
+      this.content = content;
+    }
+    if (tag != null) {
+      this.tag = tag;
+    }
+    if (isRemoveImage) {
+      this.imageUrl = null;
+    } else if (imageUrl != null && !imageUrl.isBlank()) {
+      this.imageUrl = imageUrl;
+    }
+  }
+
+  public boolean isAuthor(Long userId) {
+    return authorMember.getUser().getId().equals(userId);
+  }
+}

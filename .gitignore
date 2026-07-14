@@ -38,3 +38,15 @@ application-secret.yml
 ### OS ###
 .DS_Store
 Thumbs.db
+
+.history
+.history/
+
+### Local working notes ###
+.hoyeon/
+
+### Branch review artifacts ###
+.tmp/
+
+### Claude Code (local per-user settings) ###
+.claude/settings.local.json
