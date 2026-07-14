@@ -3,11 +3,14 @@ services:
     image: mysql:8.0
     container_name: keeply-mysql
     restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-keeply_prod}
-      MYSQL_CHARACTER_SET_SERVER: utf8mb4
-      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+      MYSQL_USER: ${DB_USERNAME:-keeply_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -26,7 +29,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-keeply_prod}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&useSSL=false
-      DB_USERNAME: root
+      DB_USERNAME: ${DB_USERNAME:-keeply_app}
     depends_on:
       mysql:
         condition: service_healthy

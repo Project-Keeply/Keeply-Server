@@ -12,8 +12,12 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-COPY --from=build /workspace/build/libs/*.jar app.jar
+RUN addgroup --system spring && adduser --system --ingroup spring spring
+
+COPY --from=build --chown=spring:spring /workspace/build/libs/keeply-server-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
+
+USER spring:spring
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
