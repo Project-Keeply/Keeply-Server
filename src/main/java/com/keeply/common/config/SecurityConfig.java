@@ -5,6 +5,7 @@ import com.keeply.auth.jwt.JwtAuthenticationEntryPoint;
 import com.keeply.auth.jwt.JwtAuthenticationFilter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,11 +21,17 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableConfigurationProperties(CorsProperties.class)
 public class SecurityConfig {
+
+  private static final List<String> ALLOWED_METHODS =
+      List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
+  private static final List<String> ALLOWED_HEADERS = List.of("*");
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
   private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+  private final CorsProperties corsProperties;
 
   private static final String[] WHITELIST = {
     "/auth/kakao/callback", "/auth/refresh", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
@@ -51,9 +58,9 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOriginPatterns(List.of("*"));
-    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    configuration.setAllowedHeaders(List.of("*"));
+    configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+    configuration.setAllowedMethods(ALLOWED_METHODS);
+    configuration.setAllowedHeaders(ALLOWED_HEADERS);
     configuration.setAllowCredentials(true);
     configuration.setMaxAge(3600L);
 
