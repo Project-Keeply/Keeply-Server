@@ -66,6 +66,36 @@ API_DOMAIN=api.keeply.example.com
 APP_CORS_ALLOWED_ORIGINS=https://keeply-work.vercel.app,https://keeply-client.vercel.app,http://localhost:5173
 ```
 
+### S3 버킷 CORS 설정
+
+브라우저는 presigned URL을 사용해 S3로 직접 요청하므로 API 서버와 별도로 S3 버킷에도 CORS 정책이 필요합니다. AWS CLI 인증 정보에 `s3:PutBucketCORS`, `s3:GetBucketCORS` 권한이 있는지 확인한 뒤 저장소 루트에서 실행합니다.
+
+```bash
+aws s3api put-bucket-cors \
+  --bucket keeply-images \
+  --cors-configuration file://infra/s3/cors.json \
+  --region ap-northeast-2
+```
+
+적용된 정책을 조회합니다.
+
+```bash
+aws s3api get-bucket-cors \
+  --bucket keeply-images \
+  --region ap-northeast-2
+```
+
+프론트에서 발급받은 presigned URL로 preflight 응답을 확인합니다.
+
+```bash
+curl -i -X OPTIONS "${PRESIGNED_URL}" \
+  -H "Origin: https://keeply-work.vercel.app" \
+  -H "Access-Control-Request-Method: PUT" \
+  -H "Access-Control-Request-Headers: content-type"
+```
+
+응답의 `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`에 요청한 Origin, `PUT`, `content-type`이 포함되어야 합니다.
+
 실행:
 
 ```bash
