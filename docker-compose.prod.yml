@@ -3,13 +3,10 @@ services:
     image: caddy:2.8-alpine
     container_name: keeply-caddy
     restart: unless-stopped
-    env_file:
-      - .env
     depends_on:
       - app
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
