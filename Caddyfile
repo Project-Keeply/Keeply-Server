@@ -1,4 +1,4 @@
-{$API_DOMAIN} {
+:80 {
 	encode zstd gzip
 
 	reverse_proxy app:8080
