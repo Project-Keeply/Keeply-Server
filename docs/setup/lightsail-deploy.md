@@ -130,7 +130,7 @@ HTTP 임시 운영에는 다음과 같은 제한이 있습니다.
 
 ```env
 VITE_API_BASE_URL=http://{LIGHTSAIL_STATIC_IP}
-VITE_KAKAO_REDIRECT_URI=https://keeply-work.vercel.app/login/callback
+VITE_KAKAO_REDIRECT_URI=http://localhost:5173/login/callback
 ```
 
 ## 4. 도메인 확보 후 HTTPS 전환
