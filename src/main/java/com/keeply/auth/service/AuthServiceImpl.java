@@ -28,9 +28,4 @@ public class AuthServiceImpl implements AuthService {
   public void logoutSession(String refreshToken) {
     authAccountService.logoutSession(refreshToken);
   }
-
-  @Override
-  public void logout(Long userId) {
-    authAccountService.logout(userId);
-  }
 }

@@ -18,7 +18,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -143,16 +142,6 @@ public class AuthAccountServiceImpl implements AuthAccountService {
         .findByUser(user.get())
         .filter(token -> token.getSessionId().equals(claims.sessionId()))
         .ifPresent(refreshTokenRepository::delete);
-  }
-
-  @Override
-  @Transactional
-  public void logout(Long userId) {
-    User user =
-        userRepository
-            .findByIdForUpdate(Objects.requireNonNull(userId))
-            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    refreshTokenRepository.deleteByUser(user);
   }
 
   private TokenIssueResult createTokens(Long userId, String sessionId) {
