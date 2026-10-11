@@ -2,7 +2,7 @@
 
 ## 문서 상태와 범위
 
-이 문서는 [서버 이슈 #64](https://github.com/Project-Keeply/Keeply-Server/issues/64)의 API 계약과 수용 기준이다. 단계 1–12의 코드 구현과 root 에이전트의 최종 검토·전체 빌드를 완료했다. 회원 탈퇴의 잠금 순서와 실제 HTTP·H2 DB·OpenAPI 통합 검증은 아래 실행 결과로 확인한다. 구현 여부와 검증 완료 여부를 구분하며, MySQL 동시성·마이그레이션·실제 브라우저 연동은 실행 결과가 있어야 완료로 표시한다.
+이 문서는 [서버 이슈 #64](https://github.com/Project-Keeply/Keeply-Server/issues/64)의 API 계약과 수용 기준이다. 단계 1–12의 구현·root 리뷰·전체 빌드를 완료했고, 실제 MySQL 8.0.46의 동시성·Flyway 신규/기존 DB 적용과 Hibernate 스키마 검증도 통과했다. 실제 Chromium에서 로컬 HttpOnly 쿠키·CORS·회전·로그아웃을 확인했다. 카카오 로그인 전체 흐름, 클라이언트 타입 재생성, 운영 HTTPS 교차 사이트 연동은 별도 검증이 필요하다. 아래 초기 skipped 기록과 후속 실제 실행 결과를 구분한다.
 
 - 작업 브랜치: `fix/refresh-token-rotation/#64` (`develop` 기준).
 - #63의 카카오 Origin별 redirect URI 변경은 별도 브랜치의 커밋 `6cf4e1a`에 보존되어 있으며, 이 작업에 포함하지 않는다. 해당 로그인 연동 변경이 필요한 환경은 별도로 통합 여부를 확인한다.
@@ -175,14 +175,15 @@ Refresh JWT에는 서명된 사용자 ID(`sub`), `type=refresh`, 발급·만료 
 - [x] Access Token 없이, 또는 만료된 Access Token을 보낸 경우에도 쿠키로 재발급/로그아웃 가능.
 - [x] 로그아웃의 쿠키 누락·무효는 성공이고 DB 장애는 5xx이며 최신 세션은 DB에 맞게 처리됨.
 - [x] 같은 세션의 이전 Refresh Token으로 로그아웃하면 현재 Refresh 세션도 폐기됨.
-- [ ] 실제 MySQL 병렬 재발급에서 정확히 한 요청만 성공하고 패자는 명확한 401이며 성공 토큰으로 후속 재발급 가능.
-- [ ] 실제 MySQL 재발급/로그아웃/로그인/탈퇴 경합에서 최종 상태가 직렬 처리 정책과 일치하고 폐기된 세션이 복구되지 않음.
+- [x] 실제 MySQL 병렬 재발급에서 정확히 한 요청만 성공하고 패자는 명확한 401이며 성공 토큰으로 후속 재발급 가능.
+- [x] 실제 MySQL 재발급/로그아웃/로그인/탈퇴 경합에서 최종 상태가 직렬 처리 정책과 일치하고 폐기된 세션이 복구되지 않음.
 - [x] JWT 만료 직전 잠금 대기 후 만료를 다시 검사함 (서비스 단위 테스트에서 잠금 획득 전후 만료를 모사; 실제 MySQL 잠금 대기 검증은 미완료).
 - [x] MVC/필터 테스트에서 정확히 허용한 Origin만 성공, 누락·`null`·불일치는 403, 정상 OPTIONS preflight는 성공.
-- [ ] Flyway 마이그레이션을 기존 스키마/Refresh 데이터가 있는 MySQL과 신규 DB에 적용해 최종 스키마와 세션 전환 확인.
+- [x] Flyway 마이그레이션을 기존 스키마/Refresh 데이터가 있는 MySQL과 신규 DB에 적용해 최종 스키마와 세션 전환 확인.
 - [x] Spotless·컴파일·테스트·빌드를 실행하고 캐시 여부와 실제 실행 범위를 보고.
 - [x] 실제 생성된 OpenAPI에서 Refresh 요청 body/JSON 필드 제거·쿠키 파라미터·공개 인증 경로·선택적 응답 code 확인.
-- [ ] 클라이언트 타입 재생성 및 실제 브라우저 쿠키 연동 검증.
+- [x] 실제 Chromium의 로컬 credentials/CORS·HttpOnly 쿠키 회전·로그아웃 삭제 확인 (서명 fixture 사용).
+- [ ] 클라이언트 타입 재생성 및 카카오 로그인·운영 HTTPS 교차 사이트 브라우저 연동 검증.
 
 동시성은 Mock Repository나 H2 결과만으로 보장했다고 보고하지 않는다. MySQL 실행이 불가능하면 해당 검증이 미완료임을 명시한다.
 
@@ -245,7 +246,7 @@ export KEEPLY_AUTH_MYSQL_TEST_PASSWORD=<전용_테스트_DB_비밀번호>
 ./gradlew test --tests '*AuthTokenMySqlMigrationTest' --rerun-tasks
 ```
 
-각 URL 환경 변수가 없으면 해당 테스트는 skipped다. 실행 결과는 검증 DB에 남으므로 재검증에는 새 빈 DB를 준비한다. 검증 후 생성한 전용 DB만 정리한다. 2026-10-11 검증 재개 시 Docker 조회와 MySQL 핸드셰이크가 다시 시간 초과되어 실제 DB 테스트는 아직 실행하지 못했다. Docker 재시작은 다른 로컬 컨테이너에 영향을 줄 수 있어 사용자 확인을 요청했다.
+각 URL 환경 변수가 없으면 해당 테스트는 skipped다. 실행 결과는 검증 DB에 남으므로 재검증에는 새 빈 DB를 준비한다. 검증 후 생성한 전용 DB만 정리한다. 2026-10-11 검증 재개 초기에는 Docker 조회와 MySQL 핸드셰이크가 시간 초과되었고 사용자에게 재시작 확인을 요청했다. 복구 후 실제 실행 결과는 마지막 절에 기록한다.
 
 테스트 추가 후 `./gradlew --gradle-user-home .gradle-local --offline --no-daemon spotlessCheck compileJava build`는 성공했다. 11개 task 중 4개가 실행, 7개가 UP-TO-DATE였으며 테스트 컴파일·전체 test·포맷 검사는 실제 실행했다. JUnit XML은 287개 중 281개 통과, MySQL 경합 4개와 Flyway 2개 skipped, 실패·오류 0개다. skipped 6개는 실제 MySQL 검증 성공을 의미하지 않는다.
 
@@ -295,3 +296,39 @@ MySQL 제품명·8.x 버전 검사를 추가한 뒤 다음 대상 테스트를 �
 ### 최종 검증 (2026-10-11)
 
 리뷰 보완을 포함해 root가 `./gradlew --gradle-user-home .gradle-local --offline --no-daemon spotlessCheck compileJava build`를 실행했다. 빌드는 성공했고 11개 task 중 3개가 실행, 8개가 UP-TO-DATE였다. Spotless 검사와 전체 `test`는 실제 실행됐고 컴파일·패키징은 앞서 검증한 결과를 재사용했다. JUnit XML 집계는 **285개 중 281개 통과, MySQL 경합 4개 skipped, 실패·오류 0개**다. 생성된 OpenAPI 검증은 통과했으며 Swagger UI의 브라우저 시각 확인은 수행하지 않았다. 실제 MySQL 경합·Flyway 적용·클라이언트 타입 재생성·브라우저 쿠키 연동은 미완료다.
+
+### 실제 MySQL 및 로컬 브라우저 검증 완료 (2026-10-11)
+
+사용자 승인 후 Docker Desktop을 재시작했다. 정상 종료는 45초 시간 초과로 실패해 Docker 앱 프로세스를 종료하고 재실행했으며, 기존 `keeply-mysql`을 시작했다. MySQL 8.0.46은 crash recovery 후 정상 연결됐다. 검증용 DB를 동시성·신규 마이그레이션·기존 데이터 마이그레이션용으로 각각 생성했고 개발/운영 DB는 변경하지 않았다.
+
+세 전용 DB URL과 테스트 계정을 위 환경 변수에 설정한 뒤 다음 명령을 실행했다.
+
+```bash
+./gradlew --gradle-user-home .gradle-local --offline --no-daemon spotlessCheck test \
+  --tests '*AuthTokenMySqlConcurrencyTest' --tests '*AuthTokenMySqlMigrationTest'
+```
+
+`test`는 실제 실행됐고 8개 task 중 1개 실행, 7개 UP-TO-DATE였다. **6개 모두 통과, skipped·실패·오류 0개**다. 앞의 전체 실행에서 통과한 281개와 이번 실제 DB 테스트 6개는 서로 다른 테스트이며 합쳐서 287개를 확인했다. 한 번의 전체 실행에서 모두 통과했다는 의미는 아니다.
+
+| 검증 | 결과 |
+|---|---|
+| 동일 Refresh 병렬 소비 | 200 하나·401 MISMATCH 하나, 패자는 쿠키 무변경, 성공 토큰으로 재발급 가능 |
+| 회전/로그아웃 | 최종 세션 없음, 후속 재발급 거부 |
+| 회전/새 로그인 | 새 sessionId 유지, 이전 로그인 토큰으로 최신 세션 폐기 불가 |
+| 회전/탈퇴 | 사용자 삭제 상태·세션 없음, 후속 재발급 거부 |
+| 빈 DB Flyway | V1~V7 성공·validate 통과·제약 유지·재실행 변경 없음 |
+| 기존 V6 Flyway | V7에서 Refresh만 삭제·6개 업무 테이블 모든 열 보존·새 세션 삽입·NULL 거부·재실행 세션 보존 |
+
+추가로 신규 마이그레이션 DB에서 실제 패키징 서버를 `prod` 프로필로 기동했다. Flyway 및 Hibernate `ddl-auto=validate`를 통과했고 `/v3/api-docs`가 HTTP 200을 반환했다. 외부 카카오/AWS는 테스트 설정을 사용했고 로컬 쿠키는 Secure=false/Lax로 명시적으로 재설정했다.
+
+`ego-browser`의 실제 Chromium에서 `http://auth-verify.localhost:18081` 페이지 → `http://auth-verify.localhost:18080` API의 포트가 다른 Origin 요청을 검증했다. 실제 카카오 로그인 대신 전용 DB의 서명된 Refresh fixture와 HttpOnly 쿠키를 초기 상태로 주입했다.
+
+- `credentials: include` 및 잘못된 Authorization이 있어도 재발급 2회 모두 200이며 JSON 토큰 필드는 accessToken뿐이다.
+- 매 응답 후 쿠키 값이 교체되고 HttpOnly=true, Secure=false, SameSite=Lax, Path=/auth, API 호스트 scope가 유지된다.
+- JavaScript의 document.cookie에서 Refresh를 읽을 수 없고 응답의 Set-Cookie도 노출되지 않는다.
+- 로그아웃 200 후 쿠키가 삭제되고 후속 재발급은 401 REFRESH_TOKEN_MISSING이다.
+- Swagger UI가 정상 표시되고 `/auth/reissue`, `/auth/logout`, `/auth/kakao/callback`을 표시하며 구 `/auth/refresh`는 없다.
+
+검증 후 임시 서버 2개와 브라우저 작업 공간을 종료했고, 이번 전용 DB 3개·이전 중단된 검증 DB 1개·테스트 토큰 파일을 정리했다. `keeply-mysql`은 실행 상태로 유지했다. JUnit XML과 토큰 원문이 없는 브라우저 결과는 로컬 `.tmp/branch-review/mysql-verification/`에 보관했다.
+
+운영 HTTPS 교차 사이트의 None/Secure 쿠키, 실제 카카오 로그인, 클라이언트 타입 재생성 및 전체 연동, Web Locks 미지원 환경은 이번 검증 범위에 포함하지 않았다. 이 항목은 클라이언트와 배포 전 별도로 확인한다.
