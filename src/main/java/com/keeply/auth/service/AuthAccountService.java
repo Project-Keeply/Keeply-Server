@@ -1,12 +1,12 @@
 package com.keeply.auth.service;
 
-import com.keeply.auth.dto.LoginResponse;
+import com.keeply.auth.dto.TokenIssueResult;
 import com.keeply.auth.kakao.KakaoUserInfoResponse;
 
 public interface AuthAccountService {
-  LoginResponse processLogin(KakaoUserInfoResponse userInfo);
+  TokenIssueResult processLogin(KakaoUserInfoResponse userInfo);
 
-  LoginResponse rotateRefreshToken(String refreshToken);
+  TokenIssueResult rotateRefreshToken(String refreshToken);
 
   void logoutSession(String refreshToken);
 

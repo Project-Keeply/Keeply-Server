@@ -3,6 +3,7 @@ package com.keeply.auth.controller;
 import com.keeply.auth.dto.KakaoLoginRequest;
 import com.keeply.auth.dto.LoginResponse;
 import com.keeply.auth.dto.ReissueRequest;
+import com.keeply.auth.dto.TokenIssueResult;
 import com.keeply.auth.service.AuthService;
 import com.keeply.common.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -22,14 +23,14 @@ public class AuthController {
 
   @PostMapping("/kakao/callback")
   public ApiResponse<LoginResponse> kakaoLogin(@RequestBody @Valid KakaoLoginRequest request) {
-    LoginResponse response = authService.login(request.getCode());
-    return ApiResponse.success(response);
+    TokenIssueResult result = authService.login(request.getCode());
+    return ApiResponse.success(LoginResponse.builder().accessToken(result.accessToken()).build());
   }
 
   @PostMapping("/refresh")
   public ApiResponse<LoginResponse> reissue(@RequestBody @Valid ReissueRequest request) {
-    LoginResponse response = authService.reissue(request.getRefreshToken());
-    return ApiResponse.success(response);
+    TokenIssueResult result = authService.reissue(request.getRefreshToken());
+    return ApiResponse.success(LoginResponse.builder().accessToken(result.accessToken()).build());
   }
 
   @PostMapping("/logout")

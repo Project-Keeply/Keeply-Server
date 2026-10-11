@@ -1,6 +1,6 @@
 package com.keeply.auth.service;
 
-import com.keeply.auth.dto.LoginResponse;
+import com.keeply.auth.dto.TokenIssueResult;
 import com.keeply.auth.entity.RefreshToken;
 import com.keeply.auth.jwt.JwtProvider;
 import com.keeply.auth.jwt.RefreshTokenClaims;
@@ -35,7 +35,7 @@ public class AuthAccountServiceImpl implements AuthAccountService {
 
   @Override
   @Transactional
-  public LoginResponse processLogin(KakaoUserInfoResponse userInfo) {
+  public TokenIssueResult processLogin(KakaoUserInfoResponse userInfo) {
     Long kakaoUserId = userInfo.getId();
     if (kakaoUserId == null) {
       throw new CustomException(ErrorCode.KAKAO_AUTH_FAILED);
@@ -62,26 +62,27 @@ public class AuthAccountServiceImpl implements AuthAccountService {
                             .build()));
 
     String sessionId = UUID.randomUUID().toString();
-    LoginResponse result = createTokens(user.getId(), sessionId);
-    LocalDateTime expiryDate = getExpiryDate(result.getRefreshToken());
+    TokenIssueResult result = createTokens(user.getId(), sessionId);
+    LocalDateTime expiryDate =
+        LocalDateTime.ofInstant(result.refreshTokenExpiresAt(), clock.getZone());
     RefreshToken savedToken = refreshTokenRepository.findByUser(user).orElse(null);
     if (savedToken == null) {
       refreshTokenRepository.save(
           RefreshToken.builder()
               .user(user)
               .sessionId(sessionId)
-              .tokenHash(hashToken(result.getRefreshToken()))
+              .tokenHash(hashToken(result.refreshToken()))
               .expiryDate(expiryDate)
               .build());
     } else {
-      savedToken.updateSession(sessionId, hashToken(result.getRefreshToken()), expiryDate);
+      savedToken.updateSession(sessionId, hashToken(result.refreshToken()), expiryDate);
     }
     return result;
   }
 
   @Override
   @Transactional
-  public LoginResponse rotateRefreshToken(String refreshToken) {
+  public TokenIssueResult rotateRefreshToken(String refreshToken) {
     if (refreshToken == null || refreshToken.isBlank()) {
       throw new CustomException(ErrorCode.REFRESH_TOKEN_MISSING);
     }
@@ -108,9 +109,10 @@ public class AuthAccountServiceImpl implements AuthAccountService {
     if (!savedToken.getTokenHash().equals(hashToken(refreshToken))) {
       throw new CustomException(ErrorCode.REFRESH_TOKEN_MISMATCH);
     }
-    LoginResponse result = createTokens(user.getId(), claims.sessionId());
+    TokenIssueResult result = createTokens(user.getId(), claims.sessionId());
     savedToken.updateToken(
-        hashToken(result.getRefreshToken()), getExpiryDate(result.getRefreshToken()));
+        hashToken(result.refreshToken()),
+        LocalDateTime.ofInstant(result.refreshTokenExpiresAt(), clock.getZone()));
     return result;
   }
 
@@ -153,11 +155,11 @@ public class AuthAccountServiceImpl implements AuthAccountService {
     refreshTokenRepository.deleteByUser(user);
   }
 
-  private LoginResponse createTokens(Long userId, String sessionId) {
-    return LoginResponse.builder()
-        .accessToken(jwtProvider.generateAccessToken(userId))
-        .refreshToken(jwtProvider.generateRefreshToken(userId, sessionId))
-        .build();
+  private TokenIssueResult createTokens(Long userId, String sessionId) {
+    String accessToken = jwtProvider.generateAccessToken(userId);
+    String refreshToken = jwtProvider.generateRefreshToken(userId, sessionId);
+    return new TokenIssueResult(
+        accessToken, refreshToken, jwtProvider.parseRefreshToken(refreshToken).expiresAt());
   }
 
   private RefreshTokenClaims parseRefreshToken(String token) {
@@ -168,11 +170,6 @@ public class AuthAccountServiceImpl implements AuthAccountService {
     } catch (JwtException | IllegalArgumentException exception) {
       throw new CustomException(ErrorCode.REFRESH_TOKEN_INVALID);
     }
-  }
-
-  private LocalDateTime getExpiryDate(String token) {
-    return LocalDateTime.ofInstant(
-        jwtProvider.parseRefreshToken(token).expiresAt(), clock.getZone());
   }
 
   private String resolveNickname(String nickname) {

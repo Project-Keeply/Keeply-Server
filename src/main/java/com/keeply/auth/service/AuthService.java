@@ -1,11 +1,11 @@
 package com.keeply.auth.service;
 
-import com.keeply.auth.dto.LoginResponse;
+import com.keeply.auth.dto.TokenIssueResult;
 
 public interface AuthService {
-  LoginResponse login(String code);
+  TokenIssueResult login(String code);
 
-  LoginResponse reissue(String refreshToken);
+  TokenIssueResult reissue(String refreshToken);
 
   void logoutSession(String refreshToken);
 

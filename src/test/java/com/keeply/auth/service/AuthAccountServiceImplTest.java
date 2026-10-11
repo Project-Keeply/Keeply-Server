@@ -10,7 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.keeply.auth.dto.LoginResponse;
+import com.keeply.auth.dto.TokenIssueResult;
 import com.keeply.auth.entity.RefreshToken;
 import com.keeply.auth.jwt.JwtProperties;
 import com.keeply.auth.jwt.JwtProvider;
@@ -111,18 +111,17 @@ class AuthAccountServiceImplTest {
   void locksUserThenRotatesOnlyOnceAndKeepsSuccessfulTokenUsable() {
     String token = createRefreshToken();
     RefreshToken savedToken = saveToken(token);
-    LoginResponse first = service.rotateRefreshToken(token);
-    assertThat(first.getRefreshToken()).isNotEqualTo(token);
-    assertThat(jwtProvider.parseRefreshToken(first.getRefreshToken()).sessionId())
+    TokenIssueResult first = service.rotateRefreshToken(token);
+    assertThat(first.refreshToken()).isNotEqualTo(token);
+    assertThat(jwtProvider.parseRefreshToken(first.refreshToken()).sessionId())
         .isEqualTo(sessionId);
-    assertThat(savedToken.getTokenHash()).isEqualTo(hashToken(first.getRefreshToken()));
+    assertThat(first.refreshTokenExpiresAt())
+        .isEqualTo(jwtProvider.parseRefreshToken(first.refreshToken()).expiresAt());
+    assertThat(savedToken.getTokenHash()).isEqualTo(hashToken(first.refreshToken()));
     assertThat(savedToken.getExpiryDate())
-        .isEqualTo(
-            LocalDateTime.ofInstant(
-                jwtProvider.parseRefreshToken(first.getRefreshToken()).expiresAt(),
-                clock.getZone()));
+        .isEqualTo(LocalDateTime.ofInstant(first.refreshTokenExpiresAt(), clock.getZone()));
     assertError(() -> service.rotateRefreshToken(token), ErrorCode.REFRESH_TOKEN_MISMATCH);
-    assertThatCode(() -> service.rotateRefreshToken(first.getRefreshToken()))
+    assertThatCode(() -> service.rotateRefreshToken(first.refreshToken()))
         .doesNotThrowAnyException();
     InOrder order = inOrder(userRepository, refreshTokenRepository);
     order.verify(userRepository).findByIdForUpdate(7L);
@@ -181,13 +180,13 @@ class AuthAccountServiceImplTest {
     when(userInfo.getId()).thenReturn(123L);
     when(userInfo.getNickname()).thenReturn("카카오 이름");
     when(userRepository.findByKakaoIdForUpdate("123")).thenReturn(Optional.of(user));
-    LoginResponse result = service.processLogin(userInfo);
+    TokenIssueResult result = service.processLogin(userInfo);
     assertThat(user.isDeleted()).isFalse();
     assertThat(user.getName()).isEqualTo("카카오 이름");
     assertThat(savedToken.getSessionId()).isNotEqualTo(sessionId);
-    assertThat(jwtProvider.parseRefreshToken(result.getRefreshToken()).sessionId())
+    assertThat(jwtProvider.parseRefreshToken(result.refreshToken()).sessionId())
         .isEqualTo(savedToken.getSessionId());
-    assertThat(savedToken.getTokenHash()).isEqualTo(hashToken(result.getRefreshToken()));
+    assertThat(savedToken.getTokenHash()).isEqualTo(hashToken(result.refreshToken()));
     verify(userRepository, never()).findByKakaoId(any());
   }
 
@@ -203,12 +202,16 @@ class AuthAccountServiceImplTest {
               return user;
             });
     when(refreshTokenRepository.findByUser(user)).thenReturn(Optional.empty());
-    LoginResponse result = service.processLogin(userInfo);
+    TokenIssueResult result = service.processLogin(userInfo);
     ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
     verify(refreshTokenRepository).save(captor.capture());
     assertThat(captor.getValue().getSessionId())
-        .isEqualTo(jwtProvider.parseRefreshToken(result.getRefreshToken()).sessionId());
-    assertThat(captor.getValue().getTokenHash()).isEqualTo(hashToken(result.getRefreshToken()));
+        .isEqualTo(jwtProvider.parseRefreshToken(result.refreshToken()).sessionId());
+    assertThat(captor.getValue().getTokenHash()).isEqualTo(hashToken(result.refreshToken()));
+    assertThat(result.refreshTokenExpiresAt())
+        .isEqualTo(jwtProvider.parseRefreshToken(result.refreshToken()).expiresAt());
+    assertThat(captor.getValue().getExpiryDate())
+        .isEqualTo(LocalDateTime.ofInstant(result.refreshTokenExpiresAt(), clock.getZone()));
     InOrder order = inOrder(userRepository, refreshTokenRepository);
     order.verify(userRepository).findByKakaoIdForUpdate("123");
     order.verify(userRepository).saveAndFlush(any());
