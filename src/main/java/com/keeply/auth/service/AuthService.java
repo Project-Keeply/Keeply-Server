@@ -1,29 +1,14 @@
 package com.keeply.auth.service;
 
 import com.keeply.auth.dto.LoginResponse;
-import com.keeply.auth.kakao.KakaoAuthClient;
-import com.keeply.auth.kakao.KakaoUserInfoResponse;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-@Service
-@RequiredArgsConstructor
-public class AuthService {
+public interface AuthService {
+  LoginResponse login(String code);
 
-  private final KakaoAuthClient kakaoAuthClient;
-  private final AuthAccountService authAccountService;
+  LoginResponse reissue(String refreshToken);
 
-  public LoginResponse login(String code) {
-    String kakaoAccessToken = kakaoAuthClient.getAccessToken(code).getAccessToken();
-    KakaoUserInfoResponse userInfo = kakaoAuthClient.getUserInfo(kakaoAccessToken);
-    return authAccountService.processLogin(userInfo);
-  }
+  void logoutSession(String refreshToken);
 
-  public LoginResponse reissue(String refreshToken) {
-    return authAccountService.rotateRefreshToken(refreshToken);
-  }
-
-  public void logout(Long userId) {
-    authAccountService.logout(userId);
-  }
+  // 기존 Controller가 쿠키 기반 로그아웃으로 전환될 때 제거한다.
+  void logout(Long userId);
 }

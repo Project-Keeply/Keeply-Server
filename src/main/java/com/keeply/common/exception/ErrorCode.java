@@ -17,6 +17,11 @@ public enum ErrorCode {
   KAKAO_AUTH_FAILED(HttpStatus.BAD_GATEWAY, "AUTH_002", "카카오 인증에 실패하였습니다."),
   FORBIDDEN(HttpStatus.FORBIDDEN, "AUTH_003", "해당 리소스에 접근 권한이 없습니다."),
 
+  REFRESH_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_MISSING", "리프레시 토큰이 없습니다."),
+  REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_EXPIRED", "리프레시 토큰이 만료되었습니다."),
+  REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_INVALID", "유효하지 않은 리프레시 토큰입니다."),
+  REFRESH_TOKEN_MISMATCH(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_MISMATCH", "리프레시 토큰이 일치하지 않습니다."),
+
   // User
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "존재하지 않는 유저입니다."),
   OWNER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "USER_002", "점장은 그룹을 먼저 삭제한 후 회원 탈퇴할 수 있습니다."),
