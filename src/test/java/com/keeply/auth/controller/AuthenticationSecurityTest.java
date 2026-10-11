@@ -95,6 +95,7 @@ class AuthenticationSecurityTest {
     mockMvc
         .perform(post("/auth/reissue").header(HttpHeaders.ORIGIN, ORIGIN))
         .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("REFRESH_TOKEN_MISSING"))
         .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, ORIGIN))
         .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"))
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
@@ -117,6 +118,7 @@ class AuthenticationSecurityTest {
                 .cookie(refreshCookie()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.accessToken").value("new-access"))
+        .andExpect(jsonPath("$.code").doesNotExist())
         .andExpect(header().exists(HttpHeaders.SET_COOKIE));
 
     verify(authService).reissue("refresh-cookie");
@@ -201,7 +203,10 @@ class AuthenticationSecurityTest {
   @ParameterizedTest
   @ValueSource(strings = {"/auth/kakao/callback", "/auth/reissue", "/auth/logout", "/users/me"})
   void getRequestsAreNotMadePublicByCookieAuthenticationMatchers(String path) throws Exception {
-    mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(get(path))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("AUTH_001"));
     verifyNoInteractions(authService);
   }
 
@@ -231,6 +236,7 @@ class AuthenticationSecurityTest {
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.success").value(false))
         .andExpect(jsonPath("$.message").value(ErrorCode.AUTH_ORIGIN_NOT_ALLOWED.getMessage()))
+        .andExpect(jsonPath("$.code").value("AUTH_ORIGIN_NOT_ALLOWED"))
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
     verifyNoInteractions(authService, jwtProvider, userRepository);
   }

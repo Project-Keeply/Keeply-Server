@@ -81,6 +81,7 @@ class AuthControllerTest {
                     .content("{\"code\":\"kakao-code\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.code").doesNotExist())
             .andExpect(jsonPath("$.data.accessToken").value("new-access"))
             .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
             .andReturn();
@@ -100,6 +101,7 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"code\":\" \"}"))
         .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("COMMON_002"))
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
 
     verifyNoInteractions(authService);
@@ -129,6 +131,7 @@ class AuthControllerTest {
         .perform(post("/auth/reissue"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.success").value(false))
+        .andExpect(jsonPath("$.code").value("REFRESH_TOKEN_MISSING"))
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
 
     verify(authService).reissue(null);
@@ -144,6 +147,8 @@ class AuthControllerTest {
     mockMvc
         .perform(post("/auth/reissue").cookie(refreshCookie("rejected-refresh")))
         .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value(errorCode.getCode()))
+        .andExpect(jsonPath("$.message").value(errorCode.getMessage()))
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
   }
 
@@ -155,6 +160,7 @@ class AuthControllerTest {
     mockMvc
         .perform(post("/auth/reissue").cookie(refreshCookie("old-refresh")))
         .andExpect(status().isInternalServerError())
+        .andExpect(jsonPath("$.code").value("COMMON_001"))
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
   }
 
@@ -165,6 +171,7 @@ class AuthControllerTest {
             .perform(post("/auth/logout"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.code").doesNotExist())
             .andExpect(jsonPath("$.data").isEmpty())
             .andReturn();
 
@@ -197,6 +204,7 @@ class AuthControllerTest {
     mockMvc
         .perform(post("/auth/logout").cookie(refreshCookie("session-refresh")))
         .andExpect(status().isInternalServerError())
+        .andExpect(jsonPath("$.code").value("COMMON_001"))
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
   }
 

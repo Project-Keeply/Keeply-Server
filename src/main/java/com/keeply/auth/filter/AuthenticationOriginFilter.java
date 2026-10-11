@@ -54,7 +54,8 @@ public class AuthenticationOriginFilter extends OncePerRequestFilter {
       response.setStatus(errorCode.getHttpStatus().value());
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.setCharacterEncoding("UTF-8");
-      objectMapper.writeValue(response.getWriter(), ApiResponse.failure(errorCode.getMessage()));
+      objectMapper.writeValue(
+          response.getWriter(), ApiResponse.failure(errorCode.getMessage(), errorCode.getCode()));
       return;
     }
     filterChain.doFilter(request, response);
