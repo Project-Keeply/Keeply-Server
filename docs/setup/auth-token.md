@@ -61,6 +61,10 @@
 
 쿠키 설정은 환경별 설정으로 분리하고 하나의 쿠키 컴포넌트에서 생성·교체·삭제한다. 삭제는 같은 이름·Path·Domain scope를 사용하고 `Max-Age=0`으로 처리한다. `SameSite`와 `Secure`도 발급 설정을 재사용한다.
 
+환경 변수 `APP_AUTH_COOKIE_SECURE`와 `APP_AUTH_COOKIE_SAME_SITE`는 각각 `app.auth-cookie.secure`, `app.auth-cookie.same-site`에 매핑한다. dev 기본값은 `false`/`Lax`, prod 기본값은 `true`/`None`이다. 다른 프로필의 컴포넌트 기본값은 `false`/`Lax`이다. SameSite는 `Lax`, `Strict`, `None`만 허용하며 `None`일 때 Secure가 반드시 `true`여야 한다. 잘못된 설정은 서버 시작 시 검증 오류로 거부한다.
+
+쿠키 수명은 주입된 `Clock`의 현재 시각부터 발급 결과의 만료 시각까지 남은 시간을 초 단위로 내림하여 계산한다. 남은 시간이 1초 미만이면 사용할 수 있는 쿠키를 발급하지 않고 오류로 처리한다. 토큰 수명이 쿠키 때문에 연장되지 않게 한다.
+
 실제 운영 프런트엔드/API 주소와 배치 관계는 아직 확인되지 않았다. 운영 주소를 임의로 정하지 않으며, 도메인과 HTTPS 확인 후 SameSite·Secure·Origin 허용 목록을 확정한다. 로컬 API 기준은 `http://localhost:8080`이며 클라이언트 Origin은 실제 개발 주소를 설정한다.
 
 - 로그인 성공과 재발급 성공에만 새 Refresh 쿠키를 발급한다.
