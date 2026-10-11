@@ -230,6 +230,25 @@ export KEEPLY_AUTH_MYSQL_TEST_PASSWORD=<전용_테스트_DB_비밀번호>
 
 병렬 검증은 같은 토큰 두 번 소비, 회전/로그아웃, 회전/새 로그인, 회전/회원 탈퇴를 다룬다. 동시에 출발하도록 barrier를 사용하고 성공·401 code·최종 DB 상태 및 성공 토큰의 후속 사용을 확인한다. 실행 여부·테스트 수·실패·skipped 결과는 최종 검증 보고에 명시한다.
 
+### 실제 Flyway 검증
+
+`src/test/java/com/keeply/auth/integration/AuthTokenMySqlMigrationTest.java`는 Spring 컨텍스트 없이 실제 Flyway와 저장소의 V1~V7 SQL을 실행한다. 사전에 생성한 서로 다른 빈 MySQL 8 전용 DB 두 개가 필요하다. 위와 같은 URL·계정·제품/버전 가드를 적용하며 DB 생성·삭제·Flyway clean은 실행하지 않는다. 테이블이 있는 DB와 localhost/127.0.0.1 표현만 다른 동일 DB를 거부한다.
+
+- 신규 DB: V1~V7 적용, Flyway validate와 성공 이력 7개, session_id 길이·NOT NULL·사용자 유일 제약·FK, 재실행 시 변경 없음.
+- 기존 데이터: V1~V6 적용 후 사용자·그룹·멤버·공지·업무·유통기한 및 Refresh fixture를 삽입한다. V7 적용 후 Refresh만 삭제되고 나머지 테이블의 모든 열이 보존되는지, 새 세션 삽입과 NULL 세션 거부, 재실행 시 새 세션 보존을 확인한다.
+
+```bash
+export KEEPLY_AUTH_MYSQL_MIGRATION_NEW_URL=jdbc:mysql://127.0.0.1:3306/keeply_auth_test_migration_new
+export KEEPLY_AUTH_MYSQL_MIGRATION_EXISTING_URL=jdbc:mysql://127.0.0.1:3306/keeply_auth_test_migration_existing
+export KEEPLY_AUTH_MYSQL_TEST_USERNAME=<전용_테스트_DB_계정>
+export KEEPLY_AUTH_MYSQL_TEST_PASSWORD=<전용_테스트_DB_비밀번호>
+./gradlew test --tests '*AuthTokenMySqlMigrationTest' --rerun-tasks
+```
+
+각 URL 환경 변수가 없으면 해당 테스트는 skipped다. 실행 결과는 검증 DB에 남으므로 재검증에는 새 빈 DB를 준비한다. 검증 후 생성한 전용 DB만 정리한다. 2026-10-11 검증 재개 시 Docker 조회와 MySQL 핸드셰이크가 다시 시간 초과되어 실제 DB 테스트는 아직 실행하지 못했다. Docker 재시작은 다른 로컬 컨테이너에 영향을 줄 수 있어 사용자 확인을 요청했다.
+
+테스트 추가 후 `./gradlew --gradle-user-home .gradle-local --offline --no-daemon spotlessCheck compileJava build`는 성공했다. 11개 task 중 4개가 실행, 7개가 UP-TO-DATE였으며 테스트 컴파일·전체 test·포맷 검사는 실제 실행했다. JUnit XML은 287개 중 281개 통과, MySQL 경합 4개와 Flyway 2개 skipped, 실패·오류 0개다. skipped 6개는 실제 MySQL 검증 성공을 의미하지 않는다.
+
 ### 단계 12 로컬 실행 결과 (2026-10-11)
 
 다음 명령은 테스트 task가 실제 실행되어 성공했다 (`test` UP-TO-DATE 아님). `compileJava`는 UP-TO-DATE였고 테스트 소스는 다시 컴파일했다.
