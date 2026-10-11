@@ -1,13 +1,17 @@
 package com.keeply.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.keeply.auth.filter.AuthenticationOriginFilter;
 import com.keeply.auth.jwt.JwtAccessDeniedHandler;
 import com.keeply.auth.jwt.JwtAuthenticationEntryPoint;
 import com.keeply.auth.jwt.JwtAuthenticationFilter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -17,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -32,9 +37,10 @@ public class SecurityConfig {
   private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
   private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
   private final CorsProperties corsProperties;
+  private final ObjectMapper objectMapper;
 
   private static final String[] WHITELIST = {
-    "/auth/kakao/callback", "/auth/refresh", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
+    "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
   };
 
   @Bean
@@ -44,15 +50,33 @@ public class SecurityConfig {
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
-            auth -> auth.requestMatchers(WHITELIST).permitAll().anyRequest().authenticated())
+            auth ->
+                auth.requestMatchers(
+                        HttpMethod.POST, "/auth/kakao/callback", "/auth/reissue", "/auth/logout")
+                    .permitAll()
+                    .requestMatchers(WHITELIST)
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
         .exceptionHandling(
             exception ->
                 exception
                     .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                     .accessDeniedHandler(jwtAccessDeniedHandler))
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        // CORS가 거부하기 전에 인증 POST의 일관된 Origin 오류 응답을 작성한다.
+        .addFilterBefore(
+            new AuthenticationOriginFilter(corsProperties, objectMapper), CorsFilter.class);
 
     return http.build();
+  }
+
+  @Bean
+  public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration() {
+    FilterRegistrationBean<JwtAuthenticationFilter> registration =
+        new FilterRegistrationBean<>(jwtAuthenticationFilter);
+    registration.setEnabled(false);
+    return registration;
   }
 
   @Bean

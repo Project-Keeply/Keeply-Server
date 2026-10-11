@@ -54,7 +54,7 @@ class SecurityConfigTest {
             "https://keeply-client.vercel.app",
             "http://localhost:5173"));
 
-    SecurityConfig securityConfig = new SecurityConfig(null, null, null, corsProperties);
+    SecurityConfig securityConfig = new SecurityConfig(null, null, null, corsProperties, null);
     CorsConfigurationSource corsConfigurationSource = securityConfig.corsConfigurationSource();
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Origin", origin);
