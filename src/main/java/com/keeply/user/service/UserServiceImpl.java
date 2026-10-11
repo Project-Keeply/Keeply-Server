@@ -47,8 +47,11 @@ public class UserServiceImpl implements UserService {
   public void delete(Long userId) {
     User user =
         userRepository
-            .findByIdAndDeletedAtIsNull(userId)
+            .findByIdForUpdate(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    if (user.isDeleted()) {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    }
 
     groupMemberRepository
         .findByUserId(userId)

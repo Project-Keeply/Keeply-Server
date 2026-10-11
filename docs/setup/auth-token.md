@@ -2,7 +2,7 @@
 
 ## 문서 상태와 범위
 
-이 문서는 [서버 이슈 #64](https://github.com/Project-Keeply/Keeply-Server/issues/64)의 **구현 목표와 수용 기준**이다. 문서 작성 시점에 아래 계약이 서버에 모두 구현되었다는 의미는 아니다. 구현 완료 여부는 각 단계의 코드와 테스트 결과로 확인한다.
+이 문서는 [서버 이슈 #64](https://github.com/Project-Keeply/Keeply-Server/issues/64)의 API 계약과 수용 기준이다. 단계 1–12의 코드 구현과 root 에이전트의 최종 검토·전체 빌드를 완료했다. 회원 탈퇴의 잠금 순서와 실제 HTTP·H2 DB·OpenAPI 통합 검증은 아래 실행 결과로 확인한다. 구현 여부와 검증 완료 여부를 구분하며, MySQL 동시성·마이그레이션·실제 브라우저 연동은 실행 결과가 있어야 완료로 표시한다.
 
 - 작업 브랜치: `fix/refresh-token-rotation/#64` (`develop` 기준).
 - #63의 카카오 Origin별 redirect URI 변경은 별도 브랜치의 커밋 `6cf4e1a`에 보존되어 있으며, 이 작업에 포함하지 않는다. 해당 로그인 연동 변경이 필요한 환경은 별도로 통합 여부를 확인한다.
@@ -167,21 +167,22 @@ Refresh JWT에는 서명된 사용자 ID(`sub`), `type=refresh`, 발급·만료 
 
 ## 수용 기준과 검증
 
-- [ ] 고정된 같은 시각에 동일 사용자 Refresh Token을 반복 발급해 문자열·`jti`가 다르고 `sessionId`는 유지됨을 실제 JWT 생성으로 확인.
-- [ ] 새 로그인은 새로운 `sessionId`를 만들고 이전 세션의 재발급·로그아웃이 최신 로그인 세션을 변경하지 않음.
-- [ ] 토큰 누락·만료·서명 변조·잘못된 타입·필수 claim 오류·해시 불일치·세션 부재·탈퇴 상태를 거부.
-- [ ] 로그인/재발급 JSON에는 Refresh Token이 없고 쿠키의 이름·Path·HttpOnly·SameSite·Secure·수명이 계약과 일치.
-- [ ] 쿠키 생성/삭제 scope가 같고 모든 실패 응답에는 쿠키 변경 헤더가 없음.
-- [ ] Access Token 없이, 또는 만료된 Access Token을 보낸 경우에도 쿠키로 재발급/로그아웃 가능.
-- [ ] 로그아웃의 쿠키 누락·무효는 성공이고 DB 장애는 5xx이며 최신 세션은 DB에 맞게 처리됨.
-- [ ] 같은 세션의 이전 Refresh Token으로 로그아웃하면 현재 Refresh 세션도 폐기됨.
+- [x] 고정된 같은 시각에 동일 사용자 Refresh Token을 반복 발급해 문자열·`jti`가 다르고 `sessionId`는 유지됨을 실제 JWT 생성으로 확인.
+- [x] 새 로그인은 새로운 `sessionId`를 만들고 이전 세션의 재발급·로그아웃이 최신 로그인 세션을 변경하지 않음.
+- [x] 토큰 누락·만료·서명 변조·잘못된 타입·필수 claim 오류·해시 불일치·세션 부재·탈퇴 상태를 거부.
+- [x] 로그인/재발급 JSON에는 Refresh Token이 없고 쿠키의 이름·Path·HttpOnly·SameSite·Secure·수명이 계약과 일치.
+- [x] 쿠키 생성/삭제 scope가 같고 모든 실패 응답에는 쿠키 변경 헤더가 없음.
+- [x] Access Token 없이, 또는 만료된 Access Token을 보낸 경우에도 쿠키로 재발급/로그아웃 가능.
+- [x] 로그아웃의 쿠키 누락·무효는 성공이고 DB 장애는 5xx이며 최신 세션은 DB에 맞게 처리됨.
+- [x] 같은 세션의 이전 Refresh Token으로 로그아웃하면 현재 Refresh 세션도 폐기됨.
 - [ ] 실제 MySQL 병렬 재발급에서 정확히 한 요청만 성공하고 패자는 명확한 401이며 성공 토큰으로 후속 재발급 가능.
 - [ ] 실제 MySQL 재발급/로그아웃/로그인/탈퇴 경합에서 최종 상태가 직렬 처리 정책과 일치하고 폐기된 세션이 복구되지 않음.
-- [ ] JWT 만료 직전 잠금 대기 후 만료를 다시 검사함.
-- [ ] MVC/필터 테스트에서 정확히 허용한 Origin만 성공, 누락·`null`·불일치는 403, 정상 OPTIONS preflight는 성공.
+- [x] JWT 만료 직전 잠금 대기 후 만료를 다시 검사함 (서비스 단위 테스트에서 잠금 획득 전후 만료를 모사; 실제 MySQL 잠금 대기 검증은 미완료).
+- [x] MVC/필터 테스트에서 정확히 허용한 Origin만 성공, 누락·`null`·불일치는 403, 정상 OPTIONS preflight는 성공.
 - [ ] Flyway 마이그레이션을 기존 스키마/Refresh 데이터가 있는 MySQL과 신규 DB에 적용해 최종 스키마와 세션 전환 확인.
-- [ ] Spotless·컴파일·테스트·빌드를 실행하고 캐시 여부와 실제 실행 범위를 보고.
-- [ ] OpenAPI에서 Refresh 요청 DTO/JSON 필드 제거 및 새 응답 code를 확인하고 클라이언트 타입 재생성·브라우저 쿠키 연동 검증.
+- [x] Spotless·컴파일·테스트·빌드를 실행하고 캐시 여부와 실제 실행 범위를 보고.
+- [x] 실제 생성된 OpenAPI에서 Refresh 요청 body/JSON 필드 제거·쿠키 파라미터·공개 인증 경로·선택적 응답 code 확인.
+- [ ] 클라이언트 타입 재생성 및 실제 브라우저 쿠키 연동 검증.
 
 동시성은 Mock Repository나 H2 결과만으로 보장했다고 보고하지 않는다. MySQL 실행이 불가능하면 해당 검증이 미완료임을 명시한다.
 
@@ -200,3 +201,78 @@ V7 전환은 기존 Refresh 레코드를 삭제하고 `session_id` 컬럼을 추
 5. 로그인·재발급·로그아웃의 성공/오류 상태와 DB/잠금 장애를 확인한다. 토큰 원문·쿠키·Authorization 헤더는 검증 로그에 남기지 않는다.
 
 현재 미확정 사항은 운영 주소에 따른 쿠키/Origin 설정, 클라이언트의 Web Locks 미지원 환경 동작, 실제 배포 순서다. 확정 전 운영 준비 완료로 보고하지 않는다.
+
+## 재현 가능한 통합 검증
+
+`AuthTokenIntegrationTest`는 test 프로필의 H2에서 실제 Service 트랜잭션, JWT, SecurityFilterChain, Controller, OpenAPI를 검증한다. 카카오 외부 호출은 하지 않고 `processLogin`에 사용자 정보 fixture를 전달한다. H2 테스트는 MySQL 잠금 검증을 대체하지 않는다. 기존 GroupMember의 MySQL 전용 생성 컬럼 DDL은 H2에서 지원하지 않아 이 통합 테스트에만 동일 컬럼·제약의 CASE 기반 `src/test/resources/sql/auth-token-h2-group-members.sql` fixture를 적용한다. 운영 엔티티와 마이그레이션은 변경하지 않는다.
+
+```bash
+./gradlew test --tests '*UserServiceImplTest' --tests '*AuthTokenIntegrationTest'
+```
+
+`AuthTokenMySqlConcurrencyTest`는 MySQL 8의 독립 트랜잭션 병렬 요청을 검증한다. 환경 변수가 없으면 JUnit에서 명시적으로 skipped다. 환경 변수를 설정한 경우 다음 제약을 컨텍스트 시작 전 검사한다. URL·자격 증명 검증이 실패하면 연결하지 않는다. 검증 통과 후 datasource 등록·DDL 전에 읽기 전용 메타데이터 연결로 제품명 MySQL과 버전 8.x를 확인한다. MariaDB와 다른 버전은 거부하며 연결·읽기 제한 시간은 각각 3초다.
+
+- URL은 `jdbc:mysql://localhost:<port>/keeply_auth_test_<suffix>` 또는 `127.0.0.1`만 허용한다. 쿼리 옵션은 허용하지 않는다.
+- 별도로 만든 전용 테스트 DB만 사용한다. `keeply_dev`와 운영 DB는 허용하지 않는다.
+- DB 계정/비밀번호는 `KEEPLY_AUTH_MYSQL_TEST_USERNAME`, `KEEPLY_AUTH_MYSQL_TEST_PASSWORD`에 명시한다.
+- 읽기 전용 메타데이터 연결이 MySQL 8.x임을 확인해야 한다. MariaDB 및 MySQL 5/9 등 다른 메이저 버전은 거부한다.
+- Hibernate `create-drop`이 이 전용 DB의 테이블을 생성·삭제한다. 공유 데이터가 있는 DB는 사용하지 않는다.
+- Flyway는 이 테스트에서 비활성화한다. V7의 기존/신규 스키마 검증은 별도로 진행한다.
+
+아래 명령의 DB와 자격 증명은 실행 전에 준비한다. 실제 값을 저장소나 테스트 로그에 기록하지 않는다.
+
+```bash
+export KEEPLY_AUTH_MYSQL_TEST_URL=jdbc:mysql://127.0.0.1:3306/keeply_auth_test_rotation
+export KEEPLY_AUTH_MYSQL_TEST_USERNAME=<전용_테스트_DB_계정>
+export KEEPLY_AUTH_MYSQL_TEST_PASSWORD=<전용_테스트_DB_비밀번호>
+./gradlew test --tests '*AuthTokenMySqlConcurrencyTest' --rerun-tasks
+```
+
+병렬 검증은 같은 토큰 두 번 소비, 회전/로그아웃, 회전/새 로그인, 회전/회원 탈퇴를 다룬다. 동시에 출발하도록 barrier를 사용하고 성공·401 code·최종 DB 상태 및 성공 토큰의 후속 사용을 확인한다. 실행 여부·테스트 수·실패·skipped 결과는 최종 검증 보고에 명시한다.
+
+### 단계 12 로컬 실행 결과 (2026-10-11)
+
+다음 명령은 테스트 task가 실제 실행되어 성공했다 (`test` UP-TO-DATE 아님). `compileJava`는 UP-TO-DATE였고 테스트 소스는 다시 컴파일했다.
+
+```bash
+./gradlew --gradle-user-home .gradle-local spotlessApply test \
+  --tests '*UserServiceImplTest' --tests '*AuthTokenIntegrationTest' \
+  --tests '*MySqlTestDatabaseGuardTest' --tests '*AuthTokenMySqlConcurrencyTest' \
+  --offline --no-daemon
+```
+
+| 검증 | 실행 결과 | 범위 |
+|---|---|---|
+| `UserServiceImplTest` | 8 passed | 기존 조회 2개 + 사용자 잠금·탈퇴 상태·STAFF/OWNER·DB 실패 6개 |
+| `AuthTokenIntegrationTest` | 8 passed | 실제 HTTP/JWT/H2 트랜잭션, 회전·세션 교체·로그아웃·탈퇴, 생성된 OpenAPI |
+| `MySqlTestDatabaseGuardTest` | 12 passed | 안전한 전용 DB URL·계정 조건, 잘못된 URL 차단 |
+| `AuthTokenMySqlConcurrencyTest` | 4 skipped | DB URL 환경 변수 미설정. MySQL 경합 검증 미완료 |
+
+총 32개 중 28개 통과, 4개 skipped, 실패 0개다. 로컬 MySQL은 127.0.0.1:3306 읽기 핸드셰이크가 3초 제한 내 완료되지 않았다. 이 결과를 MySQL 동시성이나 Flyway 마이그레이션 성공으로 해석하지 않는다. root 에이전트의 전체 검증 결과는 다음 절에 기록한다. 실제 운영 주소·브라우저 쿠키 연동·클라이언트 타입 재생성 역시 미완료다.
+
+### root 전체 검증 결과 (2026-10-11)
+
+root 에이전트가 12단계 변경을 리뷰하고 아래 명령을 실행하여 성공했다. 11개 task가 실제 실행되어 컴파일·Spotless check·전체 테스트·빌드 결과를 확인했다.
+
+```bash
+./gradlew --gradle-user-home .gradle-local --offline --no-daemon \
+  spotlessCheck compileJava build --rerun-tasks
+```
+
+JUnit XML 집계는 281개 중 277개 통과, MySQL 4개 skipped, 실패 0개다. skipped는 검증 성공에 포함하지 않는다. 실제 MySQL 잠금·Flyway 신규/기존 스키마 검증·브라우저 연동·클라이언트 타입 재생성은 여전히 미완료다. 이후 리뷰 보완은 테스트 전용 MySQL 버전 가드에 한정하고 대상 테스트로 추가 검증한다.
+
+### 리뷰 보완 대상 검증 (2026-10-11)
+
+MySQL 제품명·8.x 버전 검사를 추가한 뒤 다음 대상 테스트를 실제 실행해 성공했다. 이후 root가 전체 테스트를 다시 실행한 결과는 아래 최종 검증에 기록한다.
+
+```bash
+./gradlew --gradle-user-home .gradle-local spotlessApply test \
+  --tests '*MySqlTestDatabaseGuardTest' --tests '*AuthTokenIntegrationTest' \
+  --tests '*AuthTokenMySqlConcurrencyTest' --offline --no-daemon
+```
+
+가드 16개, H2 통합 8개가 통과했고 MySQL 경합 4개는 skipped다. 총 28개 중 24개 통과, 4개 skipped, 실패 0개이며 `test`와 테스트 컴파일은 실제 실행됐다. 앞의 전체 실행 281개는 버전 가드 4개 추가 전 집계이므로 이 대상 실행과 합산하지 않는다. 실제 MySQL 메타데이터 연결과 경합 실행은 전용 DB 환경에서 수행해야 한다.
+
+### 최종 검증 (2026-10-11)
+
+리뷰 보완을 포함해 root가 `./gradlew --gradle-user-home .gradle-local --offline --no-daemon spotlessCheck compileJava build`를 실행했다. 빌드는 성공했고 11개 task 중 3개가 실행, 8개가 UP-TO-DATE였다. Spotless 검사와 전체 `test`는 실제 실행됐고 컴파일·패키징은 앞서 검증한 결과를 재사용했다. JUnit XML 집계는 **285개 중 281개 통과, MySQL 경합 4개 skipped, 실패·오류 0개**다. 생성된 OpenAPI 검증은 통과했으며 Swagger UI의 브라우저 시각 확인은 수행하지 않았다. 실제 MySQL 경합·Flyway 적용·클라이언트 타입 재생성·브라우저 쿠키 연동은 미완료다.

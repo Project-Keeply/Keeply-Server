@@ -1,9 +1,15 @@
 package com.keeply.user.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.keeply.auth.repository.RefreshTokenRepository;
+import com.keeply.common.exception.CustomException;
+import com.keeply.common.exception.ErrorCode;
 import com.keeply.group.entity.Group;
 import com.keeply.group.entity.GroupMember;
 import com.keeply.group.entity.GroupRole;
@@ -16,9 +22,11 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
@@ -58,6 +66,97 @@ class UserServiceImplTest {
     UserResponse response = userService.getMe(userId);
 
     assertThat(response.getGroupName()).isNull();
+  }
+
+  @Test
+  void deleteLocksUserBeforeDeletingStaffMembershipAndRefreshSession() {
+    User user = createUser(1L);
+    GroupMember member = createGroupMember(user, createGroup("CU 인하대점"));
+    given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
+    given(groupMemberRepository.findByUserId(1L)).willReturn(Optional.of(member));
+
+    userService.delete(1L);
+
+    InOrder order = inOrder(userRepository, groupMemberRepository, refreshTokenRepository);
+    order.verify(userRepository).findByIdForUpdate(1L);
+    order.verify(groupMemberRepository).findByUserId(1L);
+    order.verify(refreshTokenRepository).deleteByUser(user);
+    assertThat(member.getDeletedAt()).isNotNull();
+    assertThat(user.isDeleted()).isTrue();
+  }
+
+  @Test
+  void deleteWithoutMembershipStillInvalidatesSessionAndSoftDeletesUser() {
+    User user = createUser(1L);
+    given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
+    given(groupMemberRepository.findByUserId(1L)).willReturn(Optional.empty());
+
+    userService.delete(1L);
+
+    InOrder order = inOrder(userRepository, refreshTokenRepository);
+    order.verify(userRepository).findByIdForUpdate(1L);
+    order.verify(refreshTokenRepository).deleteByUser(user);
+    assertThat(user.isDeleted()).isTrue();
+  }
+
+  @Test
+  void ownerCannotWithdrawAndKeepsRefreshSession() {
+    User user = createUser(1L);
+    GroupMember member =
+        GroupMember.builder().user(user).group(createGroup("CU")).role(GroupRole.OWNER).build();
+    given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
+    given(groupMemberRepository.findByUserId(1L)).willReturn(Optional.of(member));
+
+    assertThatThrownBy(() -> userService.delete(1L))
+        .isInstanceOfSatisfying(
+            CustomException.class,
+            exception ->
+                assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.OWNER_CANNOT_WITHDRAW));
+
+    verifyNoInteractions(refreshTokenRepository);
+    assertThat(user.isDeleted()).isFalse();
+    assertThat(member.getDeletedAt()).isNull();
+  }
+
+  @Test
+  void alreadyDeletedUserCannotWithdrawAgain() {
+    User user = createUser(1L);
+    user.markDeleted();
+    given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
+
+    assertUserNotFoundOnDelete();
+
+    verifyNoInteractions(groupMemberRepository, refreshTokenRepository);
+  }
+
+  @Test
+  void missingUserCannotWithdraw() {
+    given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.empty());
+
+    assertUserNotFoundOnDelete();
+
+    verifyNoInteractions(groupMemberRepository, refreshTokenRepository);
+  }
+
+  @Test
+  void sessionDatabaseFailurePropagatesAndUserIsNotMarkedDeleted() {
+    User user = createUser(1L);
+    given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
+    given(groupMemberRepository.findByUserId(1L)).willReturn(Optional.empty());
+    DataAccessResourceFailureException failure =
+        new DataAccessResourceFailureException("DB unavailable");
+    doThrow(failure).when(refreshTokenRepository).deleteByUser(user);
+
+    assertThatThrownBy(() -> userService.delete(1L)).isSameAs(failure);
+
+    assertThat(user.isDeleted()).isFalse();
+  }
+
+  private void assertUserNotFoundOnDelete() {
+    assertThatThrownBy(() -> userService.delete(1L))
+        .isInstanceOfSatisfying(
+            CustomException.class,
+            exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND));
   }
 
   private User createUser(Long userId) {
