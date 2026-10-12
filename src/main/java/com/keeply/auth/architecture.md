@@ -1,131 +1,32 @@
-# Kakao OAuth2 + JWT Architecture
+# Kakao OAuth2 + JWT 아키텍처
 
-## 1. Scope
-- Purpose: define backend authentication pipeline for Kakao OAuth2 login and JWT-based API authentication.
-- Current stage: backend-first implementation without frontend dependency.
+API·쿠키·오류 코드·배포 계약의 source of truth는 [인증 토큰 계약](../../../../../../docs/setup/auth-token.md)이다. 이 문서는 실제 구현의 계층과 처리 흐름을 설명한다.
 
-## 2. Authentication Flow (Backend Callback)
-1. Client moves user to Kakao authorization endpoint.
-2. Kakao redirects the client with `code` (and `state`).
-3. Client sends `POST /auth/kakao/callback` with `{ "code": "...", "state": "..." }` in the request body.
-4. Backend validates `state`.
-5. Backend exchanges `code` for Kakao access token.
-6. Backend calls Kakao user info API and extracts `kakaoId`.
-7. Backend finds user by `kakaoId`; creates user if not found.
-8. Backend issues Keeply JWT tokens (`accessToken`, `refreshToken`).
-9. Client uses `Authorization: Bearer <accessToken>` for protected APIs.
-10. On access token expiry, client calls refresh endpoint.
+## 로그인
 
-## 3. Final Token Policy
-- Multi-device policy: one refresh token per user.
-- Refresh reissue policy: rotation.
-- Storage: MySQL.
-- Storage format: refresh token hash only (no raw refresh token persistence).
-- Expiration:
-  - Access Token: 30 minutes
-  - Refresh Token: 14 days
+1. 클라이언트가 카카오 인가 흐름에서 받은 `code`를 `POST /auth/kakao/callback` JSON으로 전송한다. 서버가 현재 받는 요청 필드는 `code`이며, OAuth `state` 검증은 현재 서버 구현에 포함되어 있지 않다.
+2. `AuthenticationOriginFilter`가 정확한 허용 Origin을 확인하고 `AuthServiceImpl`이 카카오 토큰·사용자 정보를 조회한다.
+3. `AuthAccountServiceImpl.processLogin`이 트랜잭션에서 기존 사용자 행을 잠그고 사용자 정보를 반영한다. 신규 사용자에게는 고유 kakao_id 제약을 적용한다.
+4. 로그인마다 새로운 `sessionId`, 발급마다 새로운 `jti`로 JWT를 만든다. DB에는 최신 Refresh Token의 SHA-256 해시·만료 시각·sessionId만 저장한다.
+5. 트랜잭션 성공 후 Controller는 Access Token만 JSON으로 응답하고 Refresh Token은 `keeply_refresh_token` HttpOnly 쿠키로 발급한다. 내부 `TokenIssueResult`를 JSON 응답으로 노출하지 않는다.
 
-## 4. Endpoint Contract
-- `POST /auth/kakao/callback`
-  - Input (request body): `{ "code": "...", "state": "..." }`
-  - Output: `accessToken`, `refreshToken`, `tokenType`, `expiresIn`
-  - Failure:
-    - `400`: invalid `code` or `state`
-    - `401`: invalid/expired token
-    - `500`: Kakao integration failure
+## 재발급·로그아웃·탈퇴
 
-- `POST /auth/refresh`
-  - Input (request body): `{ "refreshToken": "..." }`
-  - Behavior: validate token, verify stored hash, issue new access token and new refresh token (rotation)
+- `POST /auth/reissue`: body 없이 쿠키를 사용한다. JWT 서명·만료·type·claim을 검증한 뒤 사용자 행에 비관적 쓰기 잠금을 잡는다. 잠금 후 만료를 다시 확인하고 사용자 상태·DB 만료·sessionId·최신 해시를 검사한다. 같은 sessionId와 새 jti로 회전한다. 실패에는 쿠키 변경 헤더가 없다.
+- `POST /auth/logout`: Access Token 없이 쿠키의 서명된 sessionId로 세션을 폐기한다. 같은 세션의 이미 소비된 이전 토큰도 로그아웃할 수 있다. 다른 로그인 세션은 폐기하지 않는다. 쿠키 누락·무효는 멱등 성공, DB 장애는 5xx다. 성공 시 같은 scope로 쿠키를 만료한다.
+- 회원 탈퇴: 사용자 행 잠금 후 OWNER 탈퇴 제한을 확인하고 그룹 멤버 탈퇴, Refresh 세션 삭제, 사용자 soft-delete를 처리한다. 인증의 사용자 → Refresh 레코드 잠금 순서를 따른다.
+- 사용자당 Refresh 세션 하나다. 이전 토큰 재사용은 401로 거부하되 최신 세션을 삭제하지 않는다. 잠금은 DB 최종 상태를 직렬화하며 브라우저 응답 도착 순서까지 보장하지 않는다.
+- 구 `/auth/refresh`와 body 기반 Refresh DTO는 제거했다. 성공 응답의 토큰 필드는 `accessToken` 하나다. `refreshToken`, `tokenType`, `expiresIn`은 응답 필드가 아니다.
 
-- `POST /auth/logout`
-  - Behavior: delete user's refresh token record
+## 인증·시간·쿠키
 
-## 5. Refresh Token Lifecycle
-1. Login success: generate refresh token, store hash in MySQL.
-2. Refresh request:
-   - verify JWT signature/expiry,
-   - compare hash with stored value,
-   - if valid: issue new token pair and replace stored hash,
-   - if invalid/missing/expired: return `401`.
-3. Logout: delete refresh token record.
-4. Withdrawal: delete all refresh token records for the user and process user status.
-5. Reuse/abuse detection: force re-login.
+- 보호 API는 `Authorization: Bearer <accessToken>`을 사용한다. 쿠키 인증 POST 3개는 공개 경로이며 JWT 필터가 Authorization을 파싱하지 않는다.
+- Access Token은 기존 설정 2시간, Refresh Token은 14일이다. JWT 발급·검증, DB Refresh 만료, 쿠키 남은 수명은 주입된 Clock을 기준으로 한다.
+- 세션 폐기는 기존 Access Token을 즉시 무효화하지 않는다. Access Token은 기존 정책대로 만료까지 유효하다.
+- 쿠키는 Path=/auth, Domain 생략, HttpOnly=true다. 로컬은 Lax/비Secure, 운영 교차 사이트 HTTPS는 None/Secure를 기본값으로 한다. 운영 주소 확인 후 환경 설정을 확정한다.
+- 인증 POST의 Origin은 정확히 허용 목록과 일치해야 한다. Origin 누락·null·불일치는 403이며 OPTIONS는 CORS에서 처리한다. credentials CORS와 Origin 검사는 같은 목록을 사용한다.
+- JWT secret은 환경 변수로 관리하고 토큰 원문·쿠키·Authorization을 로그에 남기지 않는다.
 
-## 6. Security Requirements
-- `state` verification is mandatory.
-- `JWT secret` must be managed via environment variables.
-- HTTPS is required in production.
-- Error responses must not expose internal failure causes or provider internals.
+## 구현·검증 경계
 
-## 7. Implementation Notes
-- Kakao token is used only for identity verification in login flow.
-- Keeply APIs trust only Keeply-issued JWT.
-- Future extension: if multi-device sessions are required, add `deviceId` and move to per-device refresh token records.
-
----
-
-# Kakao OAuth2 + JWT 아키텍처 (KOR)
-
-## 1. 범위
-- 목적: Kakao OAuth2 로그인과 JWT 기반 API 인증 파이프라인을 백엔드 기준으로 정의한다.
-- 현재 단계: 프론트엔드 연동 전, 백엔드 우선 구현 단계.
-
-## 2. 인증 플로우 (백엔드 콜백 방식)
-1. 클라이언트가 사용자를 Kakao 인가 엔드포인트로 이동시킨다.
-2. Kakao가 클라이언트에게 `code`와 `state`를 전달한다.
-3. 클라이언트가 `POST /auth/kakao/callback` 요청 본문으로 `{ "code": "...", "state": "..." }`를 전송한다.
-4. 백엔드가 `state`를 검증한다.
-5. 백엔드가 `code`로 Kakao access token을 발급받는다.
-6. 백엔드가 Kakao 사용자 정보 API를 호출해 `kakaoId`를 추출한다.
-7. 백엔드가 `kakaoId`로 사용자 조회 후, 없으면 신규 생성한다.
-8. 백엔드가 Keeply JWT(`accessToken`, `refreshToken`)를 발급한다.
-9. 클라이언트는 보호 API 호출 시 `Authorization: Bearer <accessToken>`을 사용한다.
-10. Access Token 만료 시 클라이언트가 refresh 엔드포인트를 호출한다.
-
-## 3. 최종 토큰 정책 
-- 다기기 정책: 사용자당 Refresh Token 1개.
-- 재발급 정책: Rotation.
-- 저장소: MySQL.
-- 저장 방식: Refresh Token 원문 저장 금지, 해시 저장.
-- 만료 시간:
-  - Access Token: 30분
-  - Refresh Token: 14일
-
-## 4. 엔드포인트 계약
-- `POST /auth/kakao/callback`
-  - 입력 (request body): `{ "code": "...", "state": "..." }`
-  - 출력: `accessToken`, `refreshToken`, `tokenType`, `expiresIn`
-  - 실패:
-    - `400`: 잘못된 `code` 또는 `state`
-    - `401`: 토큰 무효/만료
-    - `500`: Kakao 연동 실패
-
-- `POST /auth/refresh`
-  - 입력 (request body): `{ "refreshToken": "..." }`
-  - 동작: 토큰 검증, 저장된 해시 검증 후 access/refresh 재발급(rotation)
-
-- `POST /auth/logout`
-  - 동작: 사용자 refresh token 레코드 삭제
-
-## 5. Refresh Token 라이프사이클
-1. 로그인 성공 시 refresh token 발급 후, 해시를 MySQL에 저장한다.
-2. 재발급 요청 시:
-   - JWT 서명/만료 검증,
-   - 저장된 해시와 비교,
-   - 유효하면 새 토큰 쌍 발급 후 해시 교체,
-   - 무효/없음/만료면 `401` 반환.
-3. 로그아웃 시 refresh token 레코드를 삭제한다.
-4. 탈퇴 시 사용자 refresh token 전체 삭제 및 사용자 상태 처리.
-5. 재사용/이상 징후 감지 시 강제 재로그인 처리.
-
-## 6. 보안 요구사항
-- `state` 검증은 필수.
-- `JWT secret`은 환경변수로 관리.
-- 운영 환경에서 HTTPS 필수.
-- 에러 응답에 내부 원인/외부 제공자 상세 정보 노출 금지.
-
-## 7. 구현 메모
-- Kakao 토큰은 로그인 시 신원 확인 용도로만 사용한다.
-- Keeply API 인증은 Keeply 발급 JWT만 신뢰한다.
-- 추후 다기기 세션이 필요하면 `deviceId`를 도입해 단말별 refresh token 저장 구조로 확장한다.
+Service/Impl이 인증 트랜잭션을 소유하고 Controller는 커밋 후 쿠키를 작성한다. 쿠키 컴포넌트가 생성·회전·삭제 scope를 통일하며 공통 ApiResponse의 선택적 code가 오류 식별을 제공한다. 실제 OpenAPI와 H2 통합 테스트, 조건부 MySQL 동시성 테스트는 `src/test/java/com/keeply/auth/integration/`에 있다. MySQL을 실행하지 못한 경우 동시성과 Flyway 적용을 검증 완료로 보고하지 않는다. V7 적용 시 기존 Refresh 레코드가 삭제되므로 재로그인이 필요하다. #63 카카오 Origin별 redirect URI 수정은 이 브랜치에 포함하지 않는다.

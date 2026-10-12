@@ -1,5 +1,6 @@
 package com.keeply.auth.jwt;
 
+import com.keeply.auth.filter.AuthenticationOriginFilter;
 import com.keeply.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,6 +21,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtProvider jwtProvider;
   private final UserRepository userRepository;
+
+  @Override
+  protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+    return AuthenticationOriginFilter.hasCookieAuthenticationRequest(request);
+  }
 
   @Override
   protected void doFilterInternal(

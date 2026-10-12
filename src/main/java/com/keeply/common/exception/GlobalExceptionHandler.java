@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
     ErrorCode errorCode = e.getErrorCode();
     return ResponseEntity.status(errorCode.getHttpStatus())
-        .body(ApiResponse.failure(errorCode.getMessage()));
+        .body(ApiResponse.failure(errorCode.getMessage(), errorCode.getCode()));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
             .findFirst()
             .orElse(ErrorCode.INVALID_INPUT.getMessage());
     return ResponseEntity.status(ErrorCode.INVALID_INPUT.getHttpStatus())
-        .body(ApiResponse.failure(message));
+        .body(ApiResponse.failure(message, ErrorCode.INVALID_INPUT.getCode()));
   }
 
   @ExceptionHandler(ConstraintViolationException.class)
@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
             .findFirst()
             .orElse(ErrorCode.INVALID_INPUT.getMessage());
     return ResponseEntity.status(ErrorCode.INVALID_INPUT.getHttpStatus())
-        .body(ApiResponse.failure(message));
+        .body(ApiResponse.failure(message, ErrorCode.INVALID_INPUT.getCode()));
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
             ? ErrorCode.FILE_INVALID_DOMAIN
             : ErrorCode.INVALID_INPUT;
     return ResponseEntity.status(errorCode.getHttpStatus())
-        .body(ApiResponse.failure(errorCode.getMessage()));
+        .body(ApiResponse.failure(errorCode.getMessage(), errorCode.getCode()));
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
       HttpMessageNotReadableException e) {
     ErrorCode errorCode = resolveHttpMessageErrorCode(e);
     return ResponseEntity.status(errorCode.getHttpStatus())
-        .body(ApiResponse.failure(errorCode.getMessage()));
+        .body(ApiResponse.failure(errorCode.getMessage(), errorCode.getCode()));
   }
 
   private ErrorCode resolveHttpMessageErrorCode(HttpMessageNotReadableException e) {
@@ -81,20 +81,24 @@ public class GlobalExceptionHandler {
   @ExceptionHandler({JwtException.class, NumberFormatException.class})
   public ResponseEntity<ApiResponse<Void>> handleJwtException(Exception e) {
     return ResponseEntity.status(ErrorCode.INVALID_TOKEN.getHttpStatus())
-        .body(ApiResponse.failure(ErrorCode.INVALID_TOKEN.getMessage()));
+        .body(
+            ApiResponse.failure(
+                ErrorCode.INVALID_TOKEN.getMessage(), ErrorCode.INVALID_TOKEN.getCode()));
   }
 
   @ExceptionHandler(AuthenticationException.class)
   public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(
       AuthenticationException e) {
     return ResponseEntity.status(ErrorCode.INVALID_TOKEN.getHttpStatus())
-        .body(ApiResponse.failure(ErrorCode.INVALID_TOKEN.getMessage()));
+        .body(
+            ApiResponse.failure(
+                ErrorCode.INVALID_TOKEN.getMessage(), ErrorCode.INVALID_TOKEN.getCode()));
   }
 
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
     return ResponseEntity.status(ErrorCode.FORBIDDEN.getHttpStatus())
-        .body(ApiResponse.failure(ErrorCode.FORBIDDEN.getMessage()));
+        .body(ApiResponse.failure(ErrorCode.FORBIDDEN.getMessage(), ErrorCode.FORBIDDEN.getCode()));
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)
@@ -103,7 +107,7 @@ public class GlobalExceptionHandler {
     log.warn("Data integrity violation", e);
     ErrorCode errorCode = resolveDataIntegrityErrorCode(e);
     return ResponseEntity.status(errorCode.getHttpStatus())
-        .body(ApiResponse.failure(errorCode.getMessage()));
+        .body(ApiResponse.failure(errorCode.getMessage(), errorCode.getCode()));
   }
 
   private ErrorCode resolveDataIntegrityErrorCode(DataIntegrityViolationException e) {
@@ -125,6 +129,9 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception e) {
     log.error("Unexpected error", e);
     return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
-        .body(ApiResponse.failure(ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
+        .body(
+            ApiResponse.failure(
+                ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
+                ErrorCode.INTERNAL_SERVER_ERROR.getCode()));
   }
 }
